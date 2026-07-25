@@ -13,7 +13,15 @@ const state = {
   totalHints: 0,
   lastStatus: "ยังไม่มีข้อมูล",
   history: [],
-  currentObservation: ["ดูสบายใจ"]
+  currentObservation: ["ดูสบายใจ"],
+  sessionClosed: false,
+  activityStatus: {
+    memory: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
+    language: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
+    sequence: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
+    matching: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
+    category: {status:"not-started", question:0, completed:0, hints:0, startedAt:null}
+  }
 };
 
 const activities = {
@@ -99,6 +107,12 @@ const activities = {
 };
 
 
+
+const activityOrder = ["memory","language","sequence","matching","category"];
+function getStatusLabel(status){return {"completed":"ทำจบแล้ว","paused":"หยุดไว้","not-started":"ยังไม่เริ่ม","closed":"ยุติเมื่อปิด Session"}[status]||status;}
+function syncCurrentActivityState(){if(!state.activity)return;const item=state.activityStatus[state.activity];item.question=state.question;item.completed=state.completed;item.hints=state.hints;item.startedAt=state.startedAt;if(state.completed>=3)item.status="completed";else if(state.startedAt)item.status="paused";}
+function loadActivityState(activityId){const item=state.activityStatus[activityId];state.activity=activityId;state.question=item.question||0;state.completed=item.completed||0;state.hints=item.hints||0;state.hintIndex=item.hints||0;state.startedAt=item.startedAt||Date.now();state.stopped=false;}
+
 const hintSequences = {
   memory: [
     "ลองนึกถึงภาพที่เห็นเมื่อสักครู่",
@@ -133,6 +147,7 @@ const hintSequences = {
 };
 
 function go(name){
+  if(state.current === "activity" && name !== "activity") syncCurrentActivityState();
   state.previous = state.current;
   state.current = name;
   screens.forEach(s => s.classList.toggle("active", s.id === `screen-${name}`));
@@ -156,19 +171,11 @@ document.getElementById("saveSettings").addEventListener("click", () => {
 
 document.querySelectorAll(".activity-start").forEach(btn => {
   btn.addEventListener("click", () => {
-    state.activity = btn.dataset.activity;
-    state.question = 0;
-    state.hints = 0;
-    state.hintIndex = 0;
-    state.completed = 0;
-    state.stopped = false;
-    state.startedAt = null;
-    state.tried.add(state.activity);
-    const a = activities[state.activity];
-    document.getElementById("instructionIcon").textContent = a.icon;
-    document.getElementById("instructionTitle").textContent = a.title;
-    document.getElementById("instructionText").textContent = a.instruction;
-    go("instruction");
+    if(state.sessionClosed){toast("Session นี้ปิดแล้ว กรุณาเริ่ม Session ใหม่");return;}
+    const activityId=btn.dataset.activity; const saved=state.activityStatus[activityId];
+    if(saved.status === "paused"){loadActivityState(activityId);state.tried.add(activityId);go("activity");renderQuestion();return;}
+    state.activity=activityId;state.question=0;state.hints=0;state.hintIndex=0;state.completed=0;state.stopped=false;state.startedAt=null;state.tried.add(state.activity);
+    const a=activities[state.activity];document.getElementById("instructionIcon").textContent=a.icon;document.getElementById("instructionTitle").textContent=a.title;document.getElementById("instructionText").textContent=a.instruction;go("instruction");
   });
 });
 
@@ -178,9 +185,7 @@ document.getElementById("practiceBtn").addEventListener("click", () => {
 });
 document.getElementById("practiceHint").addEventListener("click", () => toast("ลองดูภาพหรือคำสั่งอีกครั้ง ผู้ดูแลช่วยอ่านได้ค่ะ"));
 document.getElementById("beginMain").addEventListener("click", () => {
-  state.startedAt = Date.now();
-  go("activity");
-  renderQuestion();
+  state.startedAt=Date.now();const item=state.activityStatus[state.activity];item.status="paused";item.startedAt=state.startedAt;go("activity");renderQuestion();
 });
 
 function renderQuestion(){
@@ -247,18 +252,15 @@ function bindAnswers(answer){
 }
 
 function nextQuestion(){
-  state.completed++;
-  if(state.question >= 2){
-    go("complete");
-  }else{
-    state.question++;
-    setTimeout(renderQuestion, 350);
-  }
+  state.completed++;const item=state.activityStatus[state.activity];item.completed=state.completed;item.hints=state.hints;
+  if(state.question>=2){item.status="completed";item.question=2;go("complete");}
+  else{state.question++;item.question=state.question;item.status="paused";setTimeout(renderQuestion,350);}
 }
 
 document.getElementById("hintBtn").addEventListener("click", () => {
   state.hints++;
   state.totalHints++;
+  if(state.activityStatus[state.activity]) state.activityStatus[state.activity].hints=state.hints;
   const hints = hintSequences[state.activity] || ["ผู้ดูแลอ่านคำสั่งซ้ำ"];
   const index = Math.min(state.hintIndex || 0, hints.length - 1);
   const message = hints[index];
@@ -276,8 +278,7 @@ document.getElementById("resumeBtn").addEventListener("click", () => {
   else go("readiness");
 });
 document.getElementById("stopConfirm").addEventListener("click", () => {
-  state.stopped = true;
-  go("summary");
+  state.stopped=true;if(state.activity&&state.activityStatus[state.activity].status!=="completed"){state.activityStatus[state.activity].status="paused";syncCurrentActivityState();}go("summary");
 });
 
 function updateSummary(){
@@ -328,40 +329,12 @@ document.getElementById("saveCaregiverNote").addEventListener("click", () => {
 });
 
 function updateReport(){
-  document.getElementById("reportTried").textContent = state.tried.size;
-  document.getElementById("reportHints").textContent = state.totalHints;
-  document.getElementById("reportLastStatus").textContent = state.lastStatus;
-
-  const container = document.getElementById("activityHistory");
-  if(!state.history.length){
-    container.innerHTML = '<div class="empty-state">ยังไม่มีบันทึกกิจกรรม</div>';
-    return;
-  }
-
-  container.innerHTML = state.history.map(item => `
-    <article class="history-card">
-      <div class="history-head">
-        <div class="history-title">
-          <div class="history-icon">${item.icon}</div>
-          <div>
-            <strong>${item.activity}</strong>
-            <div class="support-text">${item.status}</div>
-          </div>
-        </div>
-        <div class="status-pill ${item.status === "หยุดก่อนจบ" ? "stopped" : ""}">${item.status}</div>
-      </div>
-      <div class="history-meta">
-        <div><small>เวลา</small><strong>${item.minutes} นาที</strong></div>
-        <div><small>คำใบ้</small><strong>${item.hints} ครั้ง</strong></div>
-        <div><small>ทำจบ</small><strong>${item.completed}</strong></div>
-        <div><small>การช่วยเหลือ</small><strong>${item.support}</strong></div>
-      </div>
-      <div class="history-note">
-        <strong>ข้อสังเกต:</strong> ${item.observations.join(", ") || "ไม่มี"}<br>
-        <strong>บันทึก:</strong> ${item.note}
-      </div>
-    </article>
-  `).join("");
+  syncCurrentActivityState();const counts={completed:0,paused:0,"not-started":0,closed:0};activityOrder.forEach(id=>{const s=state.activityStatus[id].status;counts[s]=(counts[s]||0)+1;});
+  document.getElementById("reportCompletedCount").textContent=counts.completed||0;document.getElementById("reportPausedCount").textContent=counts.paused||0;document.getElementById("reportNotStartedCount").textContent=counts["not-started"]||0;
+  const pill=document.getElementById("sessionStatusPill");pill.textContent=state.sessionClosed?"Session ปิดแล้ว":"Session กำลังดำเนินการ";pill.classList.toggle("closed",state.sessionClosed);
+  document.getElementById("activityStatusList").innerHTML=activityOrder.map(id=>{const a=activities[id],item=state.activityStatus[id];let text="เริ่มกิจกรรม",action=`startActivityFromReport('${id}')`,disabled="";if(item.status==="paused")text="ทำกิจกรรมต่อ";else if(item.status==="completed"){text="ทำอีกครั้ง";action=`restartActivityFromReport('${id}')`;}else if(item.status==="closed"||state.sessionClosed){text="Session ปิดแล้ว";disabled="disabled";action="";}return `<article class="status-activity-card"><div class="status-activity-icon">${a.icon}</div><div class="status-activity-info"><strong>${a.title}</strong><small>${item.completed} จาก 3 ข้อ • ใช้คำใบ้ ${item.hints} ครั้ง</small><div><span class="status-badge ${item.status}">${getStatusLabel(item.status)}</span></div></div><button class="${item.status==="paused"?"primary":"secondary"} status-action" ${disabled} onclick="${action}">${text}</button></article>`;}).join("");
+  const container=document.getElementById("activityHistory");if(!state.history.length){container.innerHTML='<div class="empty-state">ยังไม่มีบันทึกกิจกรรม</div>';return;}
+  container.innerHTML=state.history.map(item=>`<article class="history-card"><div class="history-head"><div class="history-title"><div class="history-icon">${item.icon}</div><div><strong>${item.activity}</strong><div class="support-text">${item.status}</div></div></div><div class="status-pill ${item.status === "หยุดก่อนจบ" ? "stopped" : ""}">${item.status}</div></div><div class="history-meta"><div><small>เวลา</small><strong>${item.minutes} นาที</strong></div><div><small>คำใบ้</small><strong>${item.hints} ครั้ง</strong></div><div><small>ทำจบ</small><strong>${item.completed}</strong></div><div><small>การช่วยเหลือ</small><strong>${item.support}</strong></div></div><div class="history-note"><strong>ข้อสังเกต:</strong> ${item.observations.join(", ") || "ไม่มี"}<br><strong>บันทึก:</strong> ${item.note}</div></article>`).join("");
 }
 
 document.querySelectorAll(".observation-chip").forEach(btn => {
@@ -370,6 +343,13 @@ document.querySelectorAll(".observation-chip").forEach(btn => {
     state.currentObservation = [...document.querySelectorAll(".observation-chip.active")].map(x => x.textContent.trim());
   });
 });
+
+
+window.startActivityFromReport=function(activityId){if(state.sessionClosed){toast("Session นี้ปิดแล้ว");return;}const item=state.activityStatus[activityId];if(item.status==="paused"){loadActivityState(activityId);go("activity");renderQuestion();}else{state.activity=activityId;state.question=0;state.completed=0;state.hints=0;state.hintIndex=0;state.startedAt=null;state.stopped=false;state.tried.add(activityId);const a=activities[activityId];document.getElementById("instructionIcon").textContent=a.icon;document.getElementById("instructionTitle").textContent=a.title;document.getElementById("instructionText").textContent=a.instruction;go("instruction");}};
+window.restartActivityFromReport=function(activityId){state.activityStatus[activityId]={status:"not-started",question:0,completed:0,hints:0,startedAt:null};window.startActivityFromReport(activityId);};
+document.getElementById("requestCloseSession").addEventListener("click",()=>go("close-confirm"));
+document.getElementById("confirmCloseSession").addEventListener("click",()=>{syncCurrentActivityState();state.sessionClosed=true;activityOrder.forEach(id=>{const item=state.activityStatus[id];if(item.status==="paused")item.status="closed";});go("session-closed");});
+document.getElementById("startNewSession").addEventListener("click",()=>{state.sessionClosed=false;state.activity=null;state.question=0;state.hints=0;state.completed=0;state.stopped=false;state.startedAt=null;state.tried=new Set();state.totalHints=0;state.lastStatus="ยังไม่มีข้อมูล";state.history=[];state.currentObservation=["ดูสบายใจ"];state.activityStatus={memory:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},language:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},sequence:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},matching:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},category:{status:"not-started",question:0,completed:0,hints:0,startedAt:null}};go("welcome");toast("เริ่ม Session ใหม่แล้ว");});
 
 function toast(message){
   const t = document.getElementById("toast");

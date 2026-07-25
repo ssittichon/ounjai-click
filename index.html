@@ -326,40 +326,71 @@
         <div class="report-top">
           <div>
             <span class="eyebrow">Caregiver Report</span>
-            <h2>ภาพรวมกิจกรรม</h2>
-            <p class="support-text">ตัวอย่างรายงานจากข้อมูลจำลองของ Mockup</p>
+            <h2>ภาพรวมกิจกรรมครั้งนี้</h2>
+            <p class="support-text">ดูสถานะ เริ่มกิจกรรมที่ยังไม่ได้ทำ หรือกลับไปทำกิจกรรมที่หยุดไว้</p>
           </div>
-          <button class="secondary" data-go="welcome">กลับหน้าหลัก</button>
+          <div class="session-pill" id="sessionStatusPill">Session กำลังดำเนินการ</div>
         </div>
 
         <div class="overview-strip">
           <div><small>กิจกรรมทั้งหมด</small><strong>5</strong></div>
-          <div><small>กิจกรรมที่ลองแล้ว</small><strong id="reportTried">0</strong></div>
-          <div><small>คำใบ้สะสม</small><strong id="reportHints">0</strong></div>
-          <div><small>สถานะล่าสุด</small><strong id="reportLastStatus">ยังไม่มีข้อมูล</strong></div>
+          <div><small>ทำจบแล้ว</small><strong id="reportCompletedCount">0</strong></div>
+          <div><small>หยุดไว้</small><strong id="reportPausedCount">0</strong></div>
+          <div><small>ยังไม่เริ่ม</small><strong id="reportNotStartedCount">5</strong></div>
         </div>
 
         <div class="report-section">
-          <h3>บันทึกแยกตามกิจกรรม</h3>
+          <h3>สถานะรายกิจกรรม</h3>
+          <div id="activityStatusList" class="activity-status-list"></div>
+        </div>
+
+        <div class="report-section">
+          <h3>บันทึกจากผู้ดูแล</h3>
           <div id="activityHistory" class="activity-history">
             <div class="empty-state">ยังไม่มีบันทึกกิจกรรม</div>
           </div>
         </div>
 
-        <div class="report-section">
-          <h3>กิจกรรมที่มีใน Mockup</h3>
-          <div class="mini-activity-list">
-            <div>🧺 <span>จำภาพใกล้ตัว</span></div>
-            <div>🍌 <span>ภาพนี้คืออะไร</span></div>
-            <div>1️⃣ <span>แตะตามลำดับ</span></div>
-            <div>🧩 <span>จับคู่สิ่งของ</span></div>
-            <div>🗂️ <span>จัดหมวดหมู่ภาพ</span></div>
-          </div>
+        <div class="notice soft">
+          <strong>การใช้รายงาน</strong>
+          <p>ใช้เพื่อจัดลำดับกิจกรรมครั้งนี้และวางแผนระดับการช่วยเหลือเท่านั้น ไม่ใช่รายงานสุขภาพหรือผลประเมินทางคลินิก</p>
         </div>
 
-        <div class="notice soft">
-          <strong>หมายเหตุ</strong>
-          <p>รายงานนี้แสดงเพื่อสาธิตการสื่อสารกับผู้ดูแล ไม่ใช่ระบบติดตามสุขภาพ และไม่มีการเก็บข้อมูลจริง</p>
+        <div class="session-close-panel">
+          <h3>ยุติการทำกิจกรรมวันนี้</h3>
+          <p>เมื่อยืนยันแล้ว รายงานครั้งนี้จะถูกปิดและไม่สามารถกลับไปทำต่อใน session เดิมได้ใน Mockup นี้</p>
+          <div class="actions">
+            <button class="secondary" data-go="welcome">กลับหน้าหลักโดยยังไม่ปิด Session</button>
+            <button class="danger" id="requestCloseSession">ยืนยันจบการทดสอบครั้งนี้</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-close-confirm" class="screen">
+      <div class="card">
+        <div class="hero-icon">📋</div>
+        <h2>ยืนยันปิด Caregiver Report</h2>
+        <p class="lead">ต้องการจบการทำกิจกรรมสำหรับครั้งนี้จริงหรือไม่</p>
+        <div class="notice">
+          <strong>หลังยืนยัน</strong>
+          <p>กิจกรรมที่ยังไม่จบจะถูกบันทึกว่า “ยุติเมื่อปิด Session” และรายงานจะเปลี่ยนเป็นสถานะปิดแล้ว</p>
+        </div>
+        <div class="actions">
+          <button class="secondary" data-go="report">กลับไปดูรายงาน</button>
+          <button class="danger" id="confirmCloseSession">ยืนยันและปิดรายงาน</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-session-closed" class="screen">
+      <div class="card">
+        <div class="hero-icon">✅</div>
+        <h2>ปิดรายงานสำหรับครั้งนี้แล้ว</h2>
+        <p class="lead">ข้อมูลใน Mockup ใช้เพื่อสาธิตเท่านั้น และจะเริ่มใหม่เมื่อเริ่ม Session ถัดไป</p>
+        <div class="stack">
+          <button class="primary" id="startNewSession">เริ่ม Session ใหม่</button>
+          <button class="secondary" data-go="welcome">กลับหน้าหลัก</button>
         </div>
       </div>
     </section>
