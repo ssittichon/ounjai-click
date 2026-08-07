@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Oun Jai — Clickable Mockup V1</title>
+  <title>AI Oun Jai — Mockup V6</title>
+  <meta name="description" content="AI Oun Jai V6 caregiver-assisted cognitive activity support mockup. Non-clinical demonstration only.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,44 +12,31 @@
     <header class="topbar">
       <div>
         <div class="brand">AI Oun Jai</div>
-        <div class="subtitle">กิจกรรมสนับสนุนสำหรับผู้สูงอายุและผู้ดูแล</div>
+        <div class="subtitle">กิจกรรมสนับสนุนสำหรับผู้สูงอายุและผู้ดูแล — Mockup V6</div>
       </div>
-      <button class="icon-btn" id="homeBtn" aria-label="กลับหน้าหลัก">⌂</button>
+      <button id="homeBtn" class="icon-btn" type="button" aria-label="กลับหน้าหลัก">หน้าหลัก</button>
     </header>
 
     <section id="screen-welcome" class="screen active">
       <div class="hero-card">
-        <div class="hero-icon">🌼</div>
-        <h1>ยินดีต้อนรับ</h1>
-        <p class="lead">กิจกรรมสั้น ๆ เพื่อชวนคิด พูดคุย และมีส่วนร่วมร่วมกับผู้ดูแล</p>
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <h1>กิจกรรมวันนี้</h1>
+        <p class="lead">กิจกรรมสั้น ๆ ที่ผู้สูงอายุทำร่วมกับผู้ดูแล โดยสามารถพัก ข้าม หรือจบได้ทุกเวลา</p>
         <div class="notice">
-          <strong>ข้อสำคัญ</strong>
-          <p>Mockup นี้ไม่ใช่เครื่องมือวินิจฉัย รักษา หรือประเมินโรค และใช้ข้อมูลจำลองเท่านั้น</p>
+          <strong>ขอบเขตของ Mockup</strong>
+          <p>ใช้เพื่อทดลองรูปแบบการใช้งานและการแนะนำกิจกรรมเท่านั้น ไม่ใช่เครื่องมือวินิจฉัย คัดกรอง รักษา หรือให้คะแนนความสามารถทางการรู้คิด</p>
         </div>
         <div class="stack">
-          <button class="primary" data-go="readiness">เริ่มกิจกรรม</button>
-          <button class="secondary" data-go="caregiver">ให้ผู้ดูแลช่วยตั้งค่า</button>
-          <button class="report-btn" data-go="report">ดู Caregiver Report</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="screen-readiness" class="screen">
-      <div class="card">
-        <span class="eyebrow">Elder Mode</span>
-        <h2>วันนี้พร้อมทำกิจกรรมหรือไม่</h2>
-        <p class="support-text">หยุดหรือพักได้ทุกเวลา</p>
-        <div class="choice-grid">
-          <button class="choice" data-go="activities"><span>🙂</span>พร้อม</button>
-          <button class="choice" data-go="pause"><span>☕</span>อยากพักก่อน</button>
-          <button class="choice" data-go="end"><span>🌙</span>ไม่ทำวันนี้</button>
+          <button class="primary" data-go="caregiver">เริ่มตั้งค่า Session</button>
+          <button class="secondary" data-go="activities">ดูรายการกิจกรรม</button>
+          <button class="secondary" data-go="report">ดู Caregiver Report</button>
         </div>
       </div>
     </section>
 
     <section id="screen-caregiver" class="screen">
       <div class="card wide">
-        <span class="eyebrow">Caregiver Mode</span>
+        <span class="eyebrow">Caregiver Setup</span>
         <h2>ตั้งค่าก่อนเริ่ม</h2>
         <div class="settings-grid">
           <label>ขนาดตัวอักษร
@@ -58,24 +46,8 @@
               <option value="xlarge">ใหญ่มาก</option>
             </select>
           </label>
-          <label>เสียงคำสั่ง
-            <select id="soundSetting">
-              <option>เปิด</option>
-              <option>ปิด</option>
-            </select>
-          </label>
-          <label>ระยะเวลา
-            <select id="duration">
-              <option>5 นาที</option>
-              <option selected>10 นาที</option>
-              <option>15 นาที</option>
-            </select>
-          </label>
-          <label>ระดับเริ่มต้น
-            <select id="level">
-              <option selected>ง่ายที่สุด</option>
-              <option>ง่าย</option>
-            </select>
+          <label>ความคมชัด
+            <select id="contrast"><option value="normal" selected>ปกติ</option><option value="high">สูง</option></select>
           </label>
           <label>รูปแบบการช่วยเหลือ
             <select id="support">
@@ -85,16 +57,13 @@
               <option>ผู้ดูแลช่วยแตะหน้าจอ</option>
             </select>
           </label>
-          <label>ความคมชัด
-            <select id="contrast">
-              <option selected>ปกติ</option>
-              <option>สูง</option>
-            </select>
+          <label>จำนวนกิจกรรมวันนี้
+            <select id="activityCount"><option>3 กิจกรรม</option><option selected>4 กิจกรรม</option></select>
           </label>
         </div>
         <div class="notice soft">
-          <strong>คำแนะนำสำหรับผู้ดูแล</strong>
-          <p>ให้เวลาผู้สูงอายุ ไม่รีบตอบแทน ใช้คำใบ้ทีละขั้น และหยุดเมื่อผู้ใช้ไม่พร้อม</p>
+          <strong>หลักการ</strong>
+          <p>เริ่มจาก Core items ก่อน ระบบจะเสนอ Optional item เฉพาะเมื่อการใช้งานยังสบาย และผู้ใช้/ผู้ดูแลเลือกทำต่อ</p>
         </div>
         <div class="actions">
           <button class="secondary" data-go="welcome">ยกเลิก</button>
@@ -105,68 +74,31 @@
 
     <section id="screen-activities" class="screen">
       <div class="card wide">
-        <span class="eyebrow">Today's Activities</span>
-        <h2>เลือกกิจกรรมวันนี้</h2>
-        <div class="activity-grid">
-          <article class="activity-card">
-            <div class="activity-icon">🧺</div>
-            <h3>จำภาพใกล้ตัว</h3>
-            <p>ดูภาพ แล้วเลือกภาพที่เคยเห็น</p>
-            <span class="meta">ประมาณ 3 นาที</span>
-            <button class="primary activity-start" data-activity="memory">เริ่ม</button>
-          </article>
-          <article class="activity-card">
-            <div class="activity-icon">🍌</div>
-            <h3>ภาพนี้คืออะไร</h3>
-            <p>เลือกคำที่ตรงกับภาพ</p>
-            <span class="meta">ประมาณ 3 นาที</span>
-            <button class="primary activity-start" data-activity="language">เริ่ม</button>
-          </article>
-          <article class="activity-card">
-            <div class="activity-icon">1️⃣</div>
-            <h3>แตะตามลำดับ</h3>
-            <p>แตะตัวเลขจากน้อยไปมาก</p>
-            <span class="meta">ประมาณ 3 นาที</span>
-            <button class="primary activity-start" data-activity="sequence">เริ่ม</button>
-          </article>
-          <article class="activity-card">
-            <div class="activity-icon">🧩</div>
-            <h3>จับคู่สิ่งของ</h3>
-            <p>เลือกภาพที่เข้าคู่กันในชีวิตประจำวัน</p>
-            <span class="meta">ประมาณ 3 นาที</span>
-            <button class="primary activity-start" data-activity="matching">เริ่ม</button>
-          </article>
-          <article class="activity-card">
-            <div class="activity-icon">🗂️</div>
-            <h3>จัดหมวดหมู่ภาพ</h3>
-            <p>เลือกว่าสิ่งของอยู่ในหมวดใด</p>
-            <span class="meta">ประมาณ 3 นาที</span>
-            <button class="primary activity-start" data-activity="category">เริ่ม</button>
-          </article>
+        <div class="activity-header">
+          <div>
+            <span class="eyebrow">Activity Library</span>
+            <h2>เลือกกิจกรรม</h2>
+          </div>
+          <div class="badge" id="sessionBadge">Session เปิดอยู่</div>
         </div>
+        <p class="support-text">แนะนำให้เลือก 3–4 กิจกรรมต่อ Session ไม่จำเป็นต้องทำครบทุกกิจกรรม</p>
+        <div id="activityGrid" class="activity-grid"></div>
       </div>
     </section>
 
     <section id="screen-instruction" class="screen">
       <div class="card">
-        <span class="eyebrow">คำแนะนำ</span>
-        <div id="instructionIcon" class="hero-icon small">🧺</div>
-        <h2 id="instructionTitle">จำภาพใกล้ตัว</h2>
-        <p id="instructionText" class="lead">ดูภาพ แล้วเลือกภาพที่เคยเห็นเมื่อสักครู่</p>
+        <span class="eyebrow" id="instructionDomain">Design target</span>
+        <div id="instructionIcon" class="activity-symbol"></div>
+        <h2 id="instructionTitle"></h2>
+        <p id="instructionText" class="lead"></p>
+        <div class="notice soft">
+          <strong>ระหว่างกิจกรรม</strong>
+          <p>สามารถขอคำใบ้ พัก ข้าม หรือจบได้ตลอดเวลา โดยไม่มีคำว่า “สอบตก” หรือ “ทำไม่ได้”</p>
+        </div>
         <div class="actions">
           <button class="secondary" data-go="activities">กลับ</button>
-          <button class="primary" id="practiceBtn">ลองทำ</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="screen-practice" class="screen">
-      <div class="card">
-        <span class="eyebrow">ทดลอง 1 ข้อ</span>
-        <div id="practiceArea"></div>
-        <div class="actions">
-          <button class="secondary" id="practiceHint">ขอคำใบ้</button>
-          <button class="primary" id="beginMain">เริ่มกิจกรรมจริง</button>
+          <button class="primary" id="startActivityBtn">เริ่มกิจกรรม</button>
         </div>
       </div>
     </section>
@@ -175,236 +107,134 @@
       <div class="card wide">
         <div class="activity-header">
           <div>
-            <span class="eyebrow" id="activityLabel">กิจกรรม</span>
-            <h2 id="activityTitle">จำภาพใกล้ตัว</h2>
+            <span class="eyebrow" id="activityDomain"></span>
+            <h2 id="activityTitle"></h2>
           </div>
-          <div class="progress" id="progressText">ข้อ 1 จาก 3</div>
+          <div class="progress" id="progressText"></div>
         </div>
+        <div class="rule-strip" id="ruleStrip" hidden></div>
         <div id="activityArea" class="activity-area"></div>
+        <div class="hint-panel" id="hintPanel" hidden>
+          <strong id="hintLabel">คำใบ้</strong>
+          <p id="hintText"></p>
+        </div>
         <div class="actions split">
-          <div class="actions">
+          <div class="actions wrap">
             <button class="secondary" id="hintBtn">คำใบ้</button>
-            <button class="secondary" data-go="pause">พัก</button>
+            <button class="secondary" id="repeatBtn">ทวนคำสั่ง</button>
+            <button class="secondary" id="pauseBtn">พัก</button>
           </div>
-          <button class="danger" data-go="stop">หยุด</button>
+          <button class="danger" id="skipBtn">ข้ามข้อนี้</button>
         </div>
       </div>
     </section>
 
     <section id="screen-pause" class="screen">
       <div class="card">
-        <div class="hero-icon">☕</div>
-        <h2>พักสักครู่</h2>
-        <p class="lead">ค่อย ๆ ทำได้ และจบกิจกรรมได้เสมอ</p>
+        <div class="pause-mark" aria-hidden="true"><span></span><span></span></div>
+        <h2>พักได้เสมอ</h2>
+        <p class="lead">เมื่อพร้อมแล้วค่อยทำต่อ หรือจบกิจกรรมนี้ได้เลย</p>
         <div class="stack">
           <button class="primary" id="resumeBtn">ทำต่อ</button>
-          <button class="secondary" data-go="activities">เลือกกิจกรรมอื่น</button>
-          <button class="danger" data-go="end">จบวันนี้</button>
+          <button class="secondary" id="finishFromPause">จบกิจกรรมนี้</button>
+          <button class="danger" data-go="activities">กลับไปเลือกกิจกรรม</button>
         </div>
       </div>
     </section>
 
-    <section id="screen-stop" class="screen">
+    <section id="screen-optional" class="screen">
       <div class="card">
-        <div class="hero-icon">🤍</div>
-        <h2>จบกิจกรรมได้เสมอ</h2>
-        <p class="lead">ไม่เป็นไรนะ วันนี้เราหยุดไว้ตรงนี้ได้</p>
-        <button class="primary" id="stopConfirm">ดูสรุปสำหรับผู้ดูแล</button>
-      </div>
-    </section>
-
-    <section id="screen-complete" class="screen">
-      <div class="card">
-        <div class="hero-icon">🌷</div>
-        <h2>ขอบคุณที่ร่วมกิจกรรมวันนี้</h2>
-        <p class="lead">พักได้เลย หรือเลือกกิจกรรมอื่น</p>
+        <span class="eyebrow">Core items completed</span>
+        <h2>ต้องการทำต่ออีกเล็กน้อยไหม</h2>
+        <p class="lead" id="optionalReason">ระบบเสนอข้อเพิ่มเติมโดยดูจากรูปแบบการใช้งานล่าสุดเท่านั้น</p>
+        <div class="notice soft"><strong>ไม่ใช่การเพิ่มระดับความสามารถ</strong><p>การเสนอ Optional item เป็นเพียงตัวเลือกเพื่อดูความสนใจและความต่อเนื่องของการใช้งาน</p></div>
         <div class="actions">
-          <button class="secondary" data-go="activities">เลือกกิจกรรมอื่น</button>
-          <button class="primary" data-go="summary">ดูสรุปสำหรับผู้ดูแล</button>
+          <button class="secondary" id="finishCoreBtn">พอแล้ว</button>
+          <button class="primary" id="continueOptionalBtn">ทำต่ออีก 1 ข้อ</button>
         </div>
       </div>
     </section>
 
-    <section id="screen-summary" class="screen">
-      <div class="card wide report-card">
-        <div class="report-top">
-          <div>
-            <span class="eyebrow">Caregiver Summary</span>
-            <h2>สรุปกิจกรรมวันนี้</h2>
-            <p class="support-text">ข้อมูลจำลองเพื่อช่วยวางแผนกิจกรรมครั้งถัดไป</p>
-          </div>
-          <div class="status-pill" id="summaryStatusPill">ทำจบ</div>
+    <section id="screen-reaction" class="screen">
+      <div class="card">
+        <span class="eyebrow">หลังจบกิจกรรม</span>
+        <h2>กิจกรรมนี้เป็นอย่างไร</h2>
+        <div class="reaction-grid">
+          <button class="reaction" data-reaction="ชอบ"><span class="face face-happy"></span><b>ชอบ</b></button>
+          <button class="reaction" data-reaction="เฉย ๆ"><span class="face face-neutral"></span><b>เฉย ๆ</b></button>
+          <button class="reaction" data-reaction="ไม่ค่อยชอบ"><span class="face face-sad"></span><b>ไม่ค่อยชอบ</b></button>
         </div>
+        <label class="note-label">บันทึกจากผู้ดูแล (ไม่บังคับ)
+          <textarea id="caregiverNote" rows="4" placeholder="เช่น สนใจดี แต่ต้องทวนคำสั่ง 1 ครั้ง"></textarea>
+        </label>
+        <button class="primary full" id="saveReactionBtn">บันทึกและดูคำแนะนำ</button>
+      </div>
+    </section>
 
-        <div class="report-hero">
-          <div class="report-activity-icon" id="summaryIcon">🌼</div>
-          <div>
-            <span class="report-label">กิจกรรมล่าสุด</span>
-            <strong id="summaryActivity" class="report-title">—</strong>
-          </div>
+    <section id="screen-recommendation" class="screen">
+      <div class="card wide">
+        <span class="eyebrow">Explainable Recommendation</span>
+        <h2>ข้อเสนอสำหรับครั้งถัดไป</h2>
+        <div class="recommend-grid">
+          <div class="recommend-box"><span>สิ่งที่เกิดขึ้น</span><p id="recObserved"></p></div>
+          <div class="recommend-box"><span>ระบบเสนอ</span><p id="recProposed"></p></div>
+          <div class="recommend-box"><span>เหตุผล</span><p id="recWhy"></p></div>
         </div>
-
-        <div class="metric-grid">
-          <div class="metric-card">
-            <span class="metric-icon">⏱️</span>
-            <div><small>เวลาประมาณ</small><strong id="summaryTime">—</strong></div>
-          </div>
-          <div class="metric-card">
-            <span class="metric-icon">💡</span>
-            <div><small>จำนวนคำใบ้</small><strong id="summaryHints">0</strong></div>
-          </div>
-          <div class="metric-card">
-            <span class="metric-icon">🤝</span>
-            <div><small>ระดับความช่วยเหลือ</small><strong id="summarySupport">ผู้ดูแลอยู่ใกล้</strong></div>
-          </div>
-          <div class="metric-card">
-            <span class="metric-icon">✅</span>
-            <div><small>ข้อที่ทำจบ</small><strong id="summaryCompleted">0 จาก 3</strong></div>
-          </div>
+        <div class="notice soft"><strong>ผู้ดูแลเป็นผู้ตัดสินใจ</strong><p>ระบบจะไม่เปลี่ยนการตั้งค่าแบบเงียบ ๆ</p></div>
+        <div class="decision-grid">
+          <button class="primary decision" data-decision="Accept">ยอมรับ</button>
+          <button class="secondary decision" data-decision="Modify">ปรับเอง</button>
+          <button class="danger decision" data-decision="Reject">ไม่ใช้คำแนะนำ</button>
         </div>
-
-        <div class="completion-panel">
-          <div class="completion-head">
-            <span>ความคืบหน้ากิจกรรม</span>
-            <strong id="summaryPercent">0%</strong>
-          </div>
-          <div class="completion-track">
-            <div class="completion-fill" id="summaryProgressBar"></div>
-          </div>
-        </div>
-
-        <div class="observation-box">
-          <h3>บันทึกสำหรับผู้ดูแล</h3>
-          <div class="observation-chips">
-            <button class="observation-chip active">ดูสบายใจ</button>
-            <button class="observation-chip">ดูเหนื่อย</button>
-            <button class="observation-chip">ต้องการคำอธิบายซ้ำ</button>
-            <button class="observation-chip">ไม่ต้องการทำต่อ</button>
-          </div>
-          <label class="note-label">บันทึกเพิ่มเติม
-            <textarea id="caregiverNote" rows="3" placeholder="เช่น ชอบภาพสิ่งของ แต่ต้องอ่านคำสั่งซ้ำ"></textarea>
+        <div id="modifyPanel" class="modify-panel" hidden>
+          <label>เลือกการปรับ
+            <select id="manualModify">
+              <option>คงระดับเดิม</option>
+              <option>ลดจำนวนตัวเลือก/ตัวลวง</option>
+              <option>เพิ่มตัวอย่างหรือคงป้ายกติกา</option>
+              <option>เลือกกิจกรรมอื่นในครั้งถัดไป</option>
+            </select>
           </label>
-          <button class="secondary" id="saveCaregiverNote">บันทึกกิจกรรมนี้ใน Caregiver Report</button>
-        </div>
-
-        <div class="interpretation-panel">
-          <h3>ใช้ข้อมูลนี้อย่างไร</h3>
-          <div class="interpretation-grid">
-            <div>
-              <strong>จำนวนคำใบ้</strong>
-              <p>ใช้ดูว่าคำสั่งหรือหน้าจออาจต้องทำให้ง่ายขึ้น ไม่ได้ใช้วัดความจำหรือความรุนแรงของโรค</p>
-            </div>
-            <div>
-              <strong>ระดับความช่วยเหลือ</strong>
-              <p>ใช้วางแผนว่าครั้งหน้าควรให้ผู้ดูแลอยู่ใกล้ อ่านคำสั่ง หรือช่วยแตะหน้าจอ</p>
-            </div>
-            <div>
-              <strong>ข้อที่ทำจบ</strong>
-              <p>ใช้ดูความเหมาะสมของความยาวกิจกรรม ไม่ควรแปลว่าผ่านหรือไม่ผ่าน</p>
-            </div>
-            <div>
-              <strong>เวลาที่ใช้</strong>
-              <p>ใช้ประเมินว่ากิจกรรมยาวเกินไปหรือไม่ โดยต้องคำนึงถึงสายตา การได้ยิน การเคลื่อนไหว และความคุ้นเคยกับอุปกรณ์</p>
-            </div>
-          </div>
-          <div class="notice">
-            <strong>ข้อจำกัด</strong>
-            <p>ข้อมูลทั้งหมดเป็นข้อมูลเพื่อการจัดกิจกรรมและ UX เท่านั้น ไม่ใช่คะแนนทางคลินิก การคัดกรอง หรือการประเมินโรค</p>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="secondary" data-go="activities">กิจกรรมถัดไป</button>
-          <button class="primary" data-go="report">ดูรายงานรวม</button>
-          <button class="report-btn" data-go="end">จบวันนี้</button>
+          <button class="primary" id="confirmModify">บันทึกการปรับ</button>
         </div>
       </div>
     </section>
 
-    
     <section id="screen-report" class="screen">
-      <div class="card wide report-card">
-        <div class="report-top">
-          <div>
-            <span class="eyebrow">Caregiver Report</span>
-            <h2>ภาพรวมกิจกรรมครั้งนี้</h2>
-            <p class="support-text">ดูสถานะ เริ่มกิจกรรมที่ยังไม่ได้ทำ หรือกลับไปทำกิจกรรมที่หยุดไว้</p>
-          </div>
-          <div class="session-pill" id="sessionStatusPill">Session กำลังดำเนินการ</div>
+      <div class="card wide">
+        <div class="activity-header">
+          <div><span class="eyebrow">Caregiver Report</span><h2>สรุป Session</h2></div>
+          <button class="secondary" data-go="activities">เลือกกิจกรรม</button>
         </div>
-
-        <div class="overview-strip">
-          <div><small>กิจกรรมทั้งหมด</small><strong>5</strong></div>
-          <div><small>ทำจบแล้ว</small><strong id="reportCompletedCount">0</strong></div>
-          <div><small>หยุดไว้</small><strong id="reportPausedCount">0</strong></div>
-          <div><small>ยังไม่เริ่ม</small><strong id="reportNotStartedCount">5</strong></div>
+        <div class="summary-grid" id="summaryGrid"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>กิจกรรม</th><th>สถานะ</th><th>ข้อที่ทำ</th><th>คำใบ้รวม</th><th>พัก/ข้าม</th><th>Reaction</th><th>Caregiver decision</th></tr></thead>
+            <tbody id="reportTable"></tbody>
+          </table>
         </div>
-
         <div class="report-section">
-          <h3>สถานะรายกิจกรรม</h3>
-          <div id="activityStatusList" class="activity-status-list"></div>
+          <h3>คำแนะนำล่าสุด</h3>
+          <div id="recommendationHistory" class="history-list"></div>
         </div>
-
         <div class="report-section">
           <h3>บันทึกจากผู้ดูแล</h3>
-          <div id="activityHistory" class="activity-history">
-            <div class="empty-state">ยังไม่มีบันทึกกิจกรรม</div>
-          </div>
+          <div id="noteHistory" class="history-list"></div>
         </div>
-
-        <div class="notice soft">
-          <strong>การใช้รายงาน</strong>
-          <p>ใช้เพื่อจัดลำดับกิจกรรมครั้งนี้และวางแผนระดับการช่วยเหลือเท่านั้น ไม่ใช่รายงานสุขภาพหรือผลประเมินทางคลินิก</p>
-        </div>
-
-        <div class="session-close-panel">
-          <h3>ยุติการทำกิจกรรมวันนี้</h3>
-          <p>เมื่อยืนยันแล้ว รายงานครั้งนี้จะถูกปิดและไม่สามารถกลับไปทำต่อใน session เดิมได้ใน Mockup นี้</p>
-          <div class="actions">
-            <button class="secondary" data-go="welcome">กลับหน้าหลักโดยยังไม่ปิด Session</button>
-            <button class="danger" id="requestCloseSession">ยืนยันจบการทดสอบครั้งนี้</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="screen-close-confirm" class="screen">
-      <div class="card">
-        <div class="hero-icon">📋</div>
-        <h2>ยืนยันปิด Caregiver Report</h2>
-        <p class="lead">ต้องการจบการทำกิจกรรมสำหรับครั้งนี้จริงหรือไม่</p>
-        <div class="notice">
-          <strong>หลังยืนยัน</strong>
-          <p>กิจกรรมที่ยังไม่จบจะถูกบันทึกว่า “ยุติเมื่อปิด Session” และรายงานจะเปลี่ยนเป็นสถานะปิดแล้ว</p>
-        </div>
-        <div class="actions">
-          <button class="secondary" data-go="report">กลับไปดูรายงาน</button>
-          <button class="danger" id="confirmCloseSession">ยืนยันและปิดรายงาน</button>
-        </div>
+        <div class="notice"><strong>การตีความ</strong><p>รายงานนี้เป็นสรุป interaction/usability ของ Mockup เท่านั้น ไม่ใช่รายงานสุขภาพหรือผลประเมินทางคลินิก</p></div>
+        <div class="actions"><button class="danger" id="closeSessionBtn">ปิด Session นี้</button></div>
       </div>
     </section>
 
     <section id="screen-session-closed" class="screen">
       <div class="card">
-        <div class="hero-icon">✅</div>
-        <h2>ปิดรายงานสำหรับครั้งนี้แล้ว</h2>
-        <p class="lead">ข้อมูลใน Mockup ใช้เพื่อสาธิตเท่านั้น และจะเริ่มใหม่เมื่อเริ่ม Session ถัดไป</p>
-        <div class="stack">
-          <button class="primary" id="startNewSession">เริ่ม Session ใหม่</button>
-          <button class="secondary" data-go="welcome">กลับหน้าหลัก</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="screen-end" class="screen">
-      <div class="card">
-        <div class="hero-icon">🌼</div>
-        <h2>ขอบคุณค่ะ</h2>
-        <p class="lead">วันนี้จบกิจกรรมแล้ว พักผ่อนได้เลย</p>
-        <button class="primary" data-go="welcome">กลับหน้าหลัก</button>
+        <div class="check-mark" aria-hidden="true">✓</div>
+        <h2>ปิด Session แล้ว</h2>
+        <p class="lead">ข้อมูล Mockup อยู่ในหน่วยความจำของหน้าเว็บนี้เท่านั้น และจะล้างเมื่อเริ่ม Session ใหม่</p>
+        <button class="primary" id="newSessionBtn">เริ่ม Session ใหม่</button>
       </div>
     </section>
   </main>
-
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>

@@ -1,360 +1,149 @@
-const screens = [...document.querySelectorAll(".screen")];
-const state = {
-  current: "welcome",
-  previous: "welcome",
-  activity: null,
-  question: 0,
-  hints: 0,
-  completed: 0,
-  stopped: false,
-  startedAt: null,
-  support: "ผู้ดูแลอยู่ใกล้",
-  tried: new Set(),
-  totalHints: 0,
-  lastStatus: "ยังไม่มีข้อมูล",
-  history: [],
-  currentObservation: ["ดูสบายใจ"],
-  sessionClosed: false,
-  activityStatus: {
-    memory: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
-    language: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
-    sequence: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
-    matching: {status:"not-started", question:0, completed:0, hints:0, startedAt:null},
-    category: {status:"not-started", question:0, completed:0, hints:0, startedAt:null}
-  }
-};
+const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
+const screens=$$(".screen");
+const ids={A1:"visual",A2:"language",A3:"sequence",A4:"matching",A5:"category",A6:"attention",A7:"switch"};
+const state={current:"welcome",previous:"welcome",activity:null,itemIndex:0,hintIndex:0,currentWrong:0,currentPaused:false,reaction:null,sessionClosed:false,support:"ผู้ดูแลอยู่ใกล้",lastScreen:"activities",records:{},recHistory:[],noteHistory:[]};
 
-const activities = {
-  memory: {
-    title: "จำภาพใกล้ตัว",
-    icon: "🧺",
-    instruction: "ดูภาพ แล้วเลือกภาพที่เคยเห็นเมื่อสักครู่",
-    practice: () => `
-      <div class="prompt">
-        <p class="lead">ลองจำภาพนี้ไว้</p>
-        <div class="big-object">🍌</div>
-        <p>จากนั้นกด “เริ่มกิจกรรมจริง”</p>
-      </div>`,
-    questions: [
-      {show:"☂️", ask:"ภาพไหนที่เห็นเมื่อสักครู่", options:["👟","☂️","🥄"], answer:"☂️"},
-      {show:"🌷", ask:"ภาพไหนที่เห็นเมื่อสักครู่", options:["🌷","🍌","🧢"], answer:"🌷"},
-      {show:"🥄", ask:"ภาพไหนที่เห็นเมื่อสักครู่", options:["☕","🥄","🧦"], answer:"🥄"}
-    ]
-  },
-  language: {
-    title: "ภาพนี้คืออะไร",
-    icon: "🍌",
-    instruction: "ดูภาพ แล้วเลือกคำที่ตรงกับภาพ",
-    practice: () => `
-      <div class="prompt">
-        <p class="lead">ภาพนี้ตรงกับคำใด</p>
-        <div class="big-object">🍌</div>
-        <div class="options"><button class="option">กล้วย</button><button class="option">ช้อน</button></div>
-      </div>`,
-    questions: [
-      {show:"☂️", ask:"ภาพนี้ตรงกับคำใด", options:["ร่ม","รองเท้า","ถ้วย"], answer:"ร่ม"},
-      {show:"🥄", ask:"ภาพนี้ตรงกับคำใด", options:["ดอกไม้","ช้อน","หมวก"], answer:"ช้อน"},
-      {show:"🌷", ask:"ภาพนี้ตรงกับคำใด", options:["ดอกไม้","กล้วย","แก้วน้ำ"], answer:"ดอกไม้"}
-    ]
-  },
-  sequence: {
-    title: "แตะตามลำดับ",
-    icon: "1️⃣",
-    instruction: "แตะตัวเลขจาก 1 ไป 3 ตามลำดับ",
-    practice: () => `
-      <div class="prompt">
-        <p class="lead">ลองแตะเลข 1 ก่อน</p>
-        <div class="options"><button class="option">2</button><button class="option">1</button></div>
-      </div>`,
-    questions: [
-      {positions:[[12,18],[65,14],[38,64]]},
-      {positions:[[68,60],[12,56],[40,12]]},
-      {positions:[[16,12],[62,54],[18,64]]}
-    ]
-  },
-  matching: {
-    title: "จับคู่สิ่งของ",
-    icon: "🧩",
-    instruction: "เลือกสิ่งของที่มักใช้คู่กันในชีวิตประจำวัน",
-    practice: () => `
-      <div class="prompt">
-        <p class="lead">สิ่งใดใช้คู่กับถ้วย</p>
-        <div class="big-object">☕</div>
-        <div class="options"><button class="option emoji">🥄</button><button class="option emoji">👟</button></div>
-      </div>`,
-    questions: [
-      {show:"☕", ask:"สิ่งใดมักใช้คู่กับถ้วย", options:["🥄","👟","🌂"], answer:"🥄"},
-      {show:"👟", ask:"สิ่งใดมักใช้คู่กับรองเท้า", options:["🧦","🍌","☕"], answer:"🧦"},
-      {show:"🪥", ask:"สิ่งใดมักใช้คู่กับแปรงสีฟัน", options:["🧴","🧻","🧼"], answer:"🧴"}
-    ]
-  },
-  category: {
-    title: "จัดหมวดหมู่ภาพ",
-    icon: "🗂️",
-    instruction: "ดูภาพ แล้วเลือกหมวดที่เหมาะสม",
-    practice: () => `
-      <div class="prompt">
-        <p class="lead">กล้วยอยู่ในหมวดใด</p>
-        <div class="big-object">🍌</div>
-        <div class="options"><button class="option">อาหาร</button><button class="option">เสื้อผ้า</button></div>
-      </div>`,
-    questions: [
-      {show:"🍌", ask:"ภาพนี้อยู่ในหมวดใด", options:["อาหาร","เสื้อผ้า","ของใช้"], answer:"อาหาร"},
-      {show:"👟", ask:"ภาพนี้อยู่ในหมวดใด", options:["ดอกไม้","เสื้อผ้า","อาหาร"], answer:"เสื้อผ้า"},
-      {show:"🥄", ask:"ภาพนี้อยู่ในหมวดใด", options:["ของใช้","ผลไม้","ต้นไม้"], answer:"ของใช้"}
-    ]
-  }
-};
-
-
-
-const activityOrder = ["memory","language","sequence","matching","category"];
-function getStatusLabel(status){return {"completed":"ทำจบแล้ว","paused":"หยุดไว้","not-started":"ยังไม่เริ่ม","closed":"ยุติเมื่อปิด Session"}[status]||status;}
-function syncCurrentActivityState(){if(!state.activity)return;const item=state.activityStatus[state.activity];item.question=state.question;item.completed=state.completed;item.hints=state.hints;item.startedAt=state.startedAt;if(state.completed>=3)item.status="completed";else if(state.startedAt)item.status="paused";}
-function loadActivityState(activityId){const item=state.activityStatus[activityId];state.activity=activityId;state.question=item.question||0;state.completed=item.completed||0;state.hints=item.hints||0;state.hintIndex=item.hints||0;state.startedAt=item.startedAt||Date.now();state.stopped=false;}
-
-const hintSequences = {
-  memory: [
-    "ลองนึกถึงภาพที่เห็นเมื่อสักครู่",
-    "ลดตัวเลือกให้เหลือ 2 ตัวเลือก",
-    "ผู้ดูแลอ่านคำสั่งซ้ำ",
-    "ผู้ดูแลชี้บริเวณตัวเลือกโดยไม่บอกคำตอบ"
-  ],
-  language: [
-    "อ่านคำถามซ้ำด้วยเสียงช้า",
-    "อ่านตัวเลือกทีละคำ",
-    "ลดตัวเลือกให้เหลือ 2 คำ",
-    "ผู้ดูแลอธิบายว่าให้เลือกคำที่เป็นชื่อของภาพ"
-  ],
-  sequence: [
-    "บอกให้เริ่มจากเลข 1",
-    "เน้นกรอบของหมายเลขถัดไป",
-    "ผู้ดูแลชี้ตำแหน่งโดยไม่แตะแทน",
-    "ผู้ดูแลช่วยแตะบางส่วนหากจำเป็น"
-  ],
-  matching: [
-    "อธิบายว่าให้เลือกสิ่งของที่มักใช้ร่วมกัน",
-    "ยกตัวอย่างสิ่งของ 1 คู่",
-    "ลดตัวเลือกให้เหลือ 2 ภาพ",
-    "ผู้ดูแลชี้บริเวณตัวเลือก"
-  ],
-  category: [
-    "อ่านชื่อภาพและชื่อหมวดซ้ำ",
-    "ยกตัวอย่างสิ่งของในแต่ละหมวด",
-    "ลดตัวเลือกให้เหลือ 2 หมวด",
-    "ผู้ดูแลอธิบายความหมายของหมวด"
-  ]
-};
-
-function go(name){
-  if(state.current === "activity" && name !== "activity") syncCurrentActivityState();
-  state.previous = state.current;
-  state.current = name;
-  screens.forEach(s => s.classList.toggle("active", s.id === `screen-${name}`));
-  window.scrollTo({top:0,behavior:"smooth"});
-  if(name === "summary") updateSummary();
-  if(name === "report") updateReport();
-}
-document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
-document.getElementById("homeBtn").addEventListener("click", () => go("welcome"));
-
-document.getElementById("saveSettings").addEventListener("click", () => {
-  const font = document.getElementById("fontSize").value;
-  document.body.classList.remove("font-large","font-xlarge");
-  if(font === "large") document.body.classList.add("font-large");
-  if(font === "xlarge") document.body.classList.add("font-xlarge");
-  document.body.classList.toggle("high-contrast", document.getElementById("contrast").value === "สูง");
-  state.support = document.getElementById("support").value;
-  toast("บันทึกการตั้งค่าแล้ว");
-  go("activities");
-});
-
-document.querySelectorAll(".activity-start").forEach(btn => {
-  btn.addEventListener("click", () => {
-    if(state.sessionClosed){toast("Session นี้ปิดแล้ว กรุณาเริ่ม Session ใหม่");return;}
-    const activityId=btn.dataset.activity; const saved=state.activityStatus[activityId];
-    if(saved.status === "paused"){loadActivityState(activityId);state.tried.add(activityId);go("activity");renderQuestion();return;}
-    state.activity=activityId;state.question=0;state.hints=0;state.hintIndex=0;state.completed=0;state.stopped=false;state.startedAt=null;state.tried.add(state.activity);
-    const a=activities[state.activity];document.getElementById("instructionIcon").textContent=a.icon;document.getElementById("instructionTitle").textContent=a.title;document.getElementById("instructionText").textContent=a.instruction;go("instruction");
-  });
-});
-
-document.getElementById("practiceBtn").addEventListener("click", () => {
-  document.getElementById("practiceArea").innerHTML = activities[state.activity].practice();
-  go("practice");
-});
-document.getElementById("practiceHint").addEventListener("click", () => toast("ลองดูภาพหรือคำสั่งอีกครั้ง ผู้ดูแลช่วยอ่านได้ค่ะ"));
-document.getElementById("beginMain").addEventListener("click", () => {
-  state.startedAt=Date.now();const item=state.activityStatus[state.activity];item.status="paused";item.startedAt=state.startedAt;go("activity");renderQuestion();
-});
-
-function renderQuestion(){
-  const a = activities[state.activity];
-  document.getElementById("activityTitle").textContent = a.title;
-  document.getElementById("activityLabel").textContent = "Mockup Activity";
-  document.getElementById("progressText").textContent = `ข้อ ${state.question+1} จาก 3`;
-  const area = document.getElementById("activityArea");
-  const q = a.questions[state.question];
-
-  if(state.activity === "memory"){
-    area.innerHTML = `
-      <div class="prompt" id="memoryReveal">
-        <p class="lead">จำภาพนี้ไว้</p><div class="big-object">${q.show}</div>
-        <button class="primary" id="memoryContinue">พร้อมแล้ว</button>
-      </div>`;
-    document.getElementById("memoryContinue").onclick = () => {
-      area.innerHTML = `
-        <div class="prompt" style="width:100%">
-          <p class="lead">${q.ask}</p>
-          <div class="options">${q.options.map(x=>`<button class="option emoji" data-answer="${x}">${x}</button>`).join("")}</div>
-        </div>`;
-      bindAnswers(q.answer);
-    };
-  } else if(state.activity === "language" || state.activity === "matching" || state.activity === "category"){
-    area.innerHTML = `
-      <div class="prompt" style="width:100%">
-        <p class="lead">${q.ask}</p><div class="big-object">${q.show}</div>
-        <div class="options">${q.options.map(x=>`<button class="option" data-answer="${x}">${x}</button>`).join("")}</div>
-      </div>`;
-    bindAnswers(q.answer);
-  } else {
-    area.innerHTML = `
-      <div class="prompt" style="width:100%">
-        <p class="lead">แตะเลข 1 แล้วแตะเลข 2 และเลข 3</p>
-        <div class="sequence-board">${q.positions.map((p,i)=>`<button class="number-dot" data-n="${i+1}" style="left:${p[0]}%;top:${p[1]}%">${i+1}</button>`).join("")}</div>
-      </div>`;
-    let next = 1;
-    const dots = [...area.querySelectorAll(".number-dot")];
-    dots.forEach(dot => dot.onclick = () => {
-      if(+dot.dataset.n === next){
-        dot.disabled = true;
-        dot.textContent = "✓";
-        next++;
-        if(next === 4) nextQuestion();
-      }else{
-        toast("ค่อย ๆ เริ่มจากเลขที่น้อยกว่านะ");
-      }
-    });
-  }
-}
-
-function bindAnswers(answer){
-  document.querySelectorAll("[data-answer]").forEach(btn => {
-    btn.onclick = () => {
-      if(btn.dataset.answer === answer){
-        toast("ขอบคุณค่ะ ไปข้อต่อไปกันนะ");
-        nextQuestion();
-      }else{
-        toast("ลองดูอีกครั้ง หรือขอคำใบ้ได้ค่ะ");
-      }
-    };
-  });
-}
-
-function nextQuestion(){
-  state.completed++;const item=state.activityStatus[state.activity];item.completed=state.completed;item.hints=state.hints;
-  if(state.question>=2){item.status="completed";item.question=2;go("complete");}
-  else{state.question++;item.question=state.question;item.status="paused";setTimeout(renderQuestion,350);}
-}
-
-document.getElementById("hintBtn").addEventListener("click", () => {
-  state.hints++;
-  state.totalHints++;
-  if(state.activityStatus[state.activity]) state.activityStatus[state.activity].hints=state.hints;
-  const hints = hintSequences[state.activity] || ["ผู้ดูแลอ่านคำสั่งซ้ำ"];
-  const index = Math.min(state.hintIndex || 0, hints.length - 1);
-  const message = hints[index];
-  state.hintIndex = index + 1;
-
-  if(state.activity === "sequence" && index >= 1){
-    const targets = [...document.querySelectorAll(".number-dot:not(:disabled)")];
-    if(targets.length) targets[0].classList.add("next");
-  }
-  toast(`คำใบ้ ${index + 1}: ${message}`);
-});
-
-document.getElementById("resumeBtn").addEventListener("click", () => {
-  if(state.activity && state.startedAt) go("activity");
-  else go("readiness");
-});
-document.getElementById("stopConfirm").addEventListener("click", () => {
-  state.stopped=true;if(state.activity&&state.activityStatus[state.activity].status!=="completed"){state.activityStatus[state.activity].status="paused";syncCurrentActivityState();}go("summary");
-});
-
-function updateSummary(){
-  const elapsed = state.startedAt ? Math.max(1, Math.round((Date.now()-state.startedAt)/60000)) : 0;
-  const activity = state.activity ? activities[state.activity] : null;
-  const status = state.stopped ? "หยุดก่อนจบ" : "ทำจบ";
-  const percent = Math.min(100, Math.round((state.completed/3)*100));
-  state.lastStatus = status;
-
-  document.getElementById("summaryActivity").textContent = activity ? activity.title : "ยังไม่ได้เริ่มกิจกรรม";
-  document.getElementById("summaryIcon").textContent = activity ? activity.icon : "🌼";
-  document.getElementById("summaryTime").textContent = `${elapsed || 1} นาที`;
-  document.getElementById("summaryHints").textContent = state.hints;
-  document.getElementById("summarySupport").textContent = state.support;
-  document.getElementById("summaryCompleted").textContent = `${state.completed} จาก 3`;
-  document.getElementById("summaryPercent").textContent = `${percent}%`;
-  document.getElementById("summaryProgressBar").style.width = `${percent}%`;
-
-  const pill = document.getElementById("summaryStatusPill");
-  pill.textContent = status;
-  pill.classList.toggle("stopped", state.stopped);
-}
-
-
-
-document.getElementById("saveCaregiverNote").addEventListener("click", () => {
-  if(!state.activity){
-    toast("ยังไม่มีกิจกรรมให้บันทึก");
-    return;
-  }
-  const activity = activities[state.activity];
-  const elapsed = state.startedAt ? Math.max(1, Math.round((Date.now()-state.startedAt)/60000)) : 1;
-  const note = document.getElementById("caregiverNote").value.trim();
-  const record = {
-    activity: activity.title,
-    icon: activity.icon,
-    status: state.stopped ? "หยุดก่อนจบ" : "ทำจบ",
-    minutes: elapsed,
-    hints: state.hints,
-    support: state.support,
-    completed: `${state.completed} จาก 3`,
-    observations: state.currentObservation.length ? [...state.currentObservation] : [],
-    note: note || "ไม่มีบันทึกเพิ่มเติม"
+function svg(name){
+  const common='viewBox="0 0 100 100" role="img" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"';
+  const shapes={
+    cup:`<svg ${common}><path d="M24 32h46v38a12 12 0 0 1-12 12H36a12 12 0 0 1-12-12V32Z"/><path d="M70 40h8a13 13 0 0 1 0 26h-8"/><path d="M30 22h34"/></svg>`,
+    banana:`<svg ${common}><path d="M26 30c3 30 21 49 49 46 6-1 12-5 15-10-24 5-43-10-49-34-1-5-7-7-15-2Z"/><path d="M26 28l-5-7"/></svg>`,
+    umbrella:`<svg ${common}><path d="M16 49c5-25 22-36 34-36s29 11 34 36H16Z"/><path d="M50 49v31c0 8 10 9 14 3"/></svg>`,
+    spoon:`<svg ${common}><ellipse cx="50" cy="25" rx="16" ry="19"/><path d="M50 44v42"/></svg>`,
+    key:`<svg ${common}><circle cx="32" cy="38" r="17"/><path d="M44 50l37 37M66 72l9-9M74 80l9-9"/></svg>`,
+    door:`<svg ${common}><path d="M26 14h48v72H26Z"/><circle cx="62" cy="52" r="3"/></svg>`,
+    toothbrush:`<svg ${common}><path d="M24 80l46-46"/><path d="M65 25l9-9M72 32l9-9M59 19l9-9"/><path d="M20 84h14"/></svg>`,
+    toothpaste:`<svg ${common}><path d="M31 25h38l-5 58H36l-5-58Z"/><path d="M38 25v-9h24v9"/><path d="M42 51h16"/></svg>`,
+    hat:`<svg ${common}><path d="M29 58c2-22 10-36 21-36s19 14 21 36"/><path d="M16 60c22 7 46 7 68 0"/></svg>`,
+    flower:`<svg ${common}><circle cx="50" cy="40" r="9"/><circle cx="50" cy="22" r="11"/><circle cx="67" cy="34" r="11"/><circle cx="60" cy="52" r="11"/><circle cx="40" cy="52" r="11"/><circle cx="33" cy="34" r="11"/><path d="M50 59v26M50 72c-12 0-18 7-20 14M50 72c12 0 18 7 20 14"/></svg>`,
+    house:`<svg ${common}><path d="M16 48 50 19l34 29"/><path d="M24 45v39h52V45"/><path d="M43 84V61h16v23"/></svg>`,
+    notebook:`<svg ${common}><rect x="28" y="15" width="48" height="70" rx="5"/><path d="M28 28h-7M28 45h-7M28 62h-7M40 34h24M40 49h24M40 64h19"/></svg>`,
+    pen:`<svg ${common}><path d="M24 76 70 30l10 10-46 46-15 4 5-14Z"/><path d="M64 36l10 10"/></svg>`,
+    plate:`<svg ${common}><circle cx="50" cy="50" r="34"/><circle cx="50" cy="50" r="21"/></svg>`,
+    shoe:`<svg ${common}><path d="M18 64c18 0 27-4 32-21 8 8 17 15 30 19 6 2 9 7 8 13H20c-6 0-7-8-2-11Z"/></svg>`,
+    orange:`<svg ${common}><circle cx="50" cy="55" r="30"/><path d="M48 24c2-9 10-14 19-12M50 25c-3-7-8-10-14-10"/></svg>`,
+    apple:`<svg ${common}><path d="M50 31c-15-12-31-2-31 17 0 25 18 39 31 39s31-14 31-39c0-19-16-29-31-17Z"/><path d="M50 30c0-9 4-15 10-20M52 23c7-3 13-2 18 3"/></svg>`,
+    shirt:`<svg ${common}><path d="M33 20 18 35l12 15 8-7v40h24V43l8 7 12-15-15-15-9 8H42l-9-8Z"/></svg>`,
+    tree:`<svg ${common}><path d="M50 58v27M40 85h20"/><circle cx="50" cy="38" r="25"/><circle cx="34" cy="44" r="15"/><circle cx="66" cy="44" r="15"/></svg>`,
+    glasses:`<svg ${common}><circle cx="32" cy="52" r="18"/><circle cx="68" cy="52" r="18"/><path d="M50 49h0M50 49c-4-5-8-5-12 0M86 49l7-3M14 49l-7-3"/></svg>`,
+    circle:`<svg ${common}><circle cx="50" cy="50" r="30"/></svg>`,
+    square:`<svg ${common}><rect x="22" y="22" width="56" height="56" rx="6"/></svg>`,
+    triangle:`<svg ${common}><path d="M50 18 84 79H16L50 18Z"/></svg>`,
+    star:`<svg ${common}><path d="m50 14 10 23 25 3-19 17 5 25-21-13-21 13 5-25-19-17 25-3 10-23Z"/></svg>`,
+    circleDot:`<svg ${common}><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="5" fill="currentColor" stroke="none"/></svg>`,
+    squareDot:`<svg ${common}><rect x="22" y="22" width="56" height="56" rx="6"/><circle cx="50" cy="50" r="5" fill="currentColor" stroke="none"/></svg>`
   };
-  state.history.unshift(record);
-  document.getElementById("caregiverNote").value = "";
-  toast("บันทึกกิจกรรมนี้ใน Caregiver Report แล้ว");
-});
-
-function updateReport(){
-  syncCurrentActivityState();const counts={completed:0,paused:0,"not-started":0,closed:0};activityOrder.forEach(id=>{const s=state.activityStatus[id].status;counts[s]=(counts[s]||0)+1;});
-  document.getElementById("reportCompletedCount").textContent=counts.completed||0;document.getElementById("reportPausedCount").textContent=counts.paused||0;document.getElementById("reportNotStartedCount").textContent=counts["not-started"]||0;
-  const pill=document.getElementById("sessionStatusPill");pill.textContent=state.sessionClosed?"Session ปิดแล้ว":"Session กำลังดำเนินการ";pill.classList.toggle("closed",state.sessionClosed);
-  document.getElementById("activityStatusList").innerHTML=activityOrder.map(id=>{const a=activities[id],item=state.activityStatus[id];let text="เริ่มกิจกรรม",action=`startActivityFromReport('${id}')`,disabled="";if(item.status==="paused")text="ทำกิจกรรมต่อ";else if(item.status==="completed"){text="ทำอีกครั้ง";action=`restartActivityFromReport('${id}')`;}else if(item.status==="closed"||state.sessionClosed){text="Session ปิดแล้ว";disabled="disabled";action="";}return `<article class="status-activity-card"><div class="status-activity-icon">${a.icon}</div><div class="status-activity-info"><strong>${a.title}</strong><small>${item.completed} จาก 3 ข้อ • ใช้คำใบ้ ${item.hints} ครั้ง</small><div><span class="status-badge ${item.status}">${getStatusLabel(item.status)}</span></div></div><button class="${item.status==="paused"?"primary":"secondary"} status-action" ${disabled} onclick="${action}">${text}</button></article>`;}).join("");
-  const container=document.getElementById("activityHistory");if(!state.history.length){container.innerHTML='<div class="empty-state">ยังไม่มีบันทึกกิจกรรม</div>';return;}
-  container.innerHTML=state.history.map(item=>`<article class="history-card"><div class="history-head"><div class="history-title"><div class="history-icon">${item.icon}</div><div><strong>${item.activity}</strong><div class="support-text">${item.status}</div></div></div><div class="status-pill ${item.status === "หยุดก่อนจบ" ? "stopped" : ""}">${item.status}</div></div><div class="history-meta"><div><small>เวลา</small><strong>${item.minutes} นาที</strong></div><div><small>คำใบ้</small><strong>${item.hints} ครั้ง</strong></div><div><small>ทำจบ</small><strong>${item.completed}</strong></div><div><small>การช่วยเหลือ</small><strong>${item.support}</strong></div></div><div class="history-note"><strong>ข้อสังเกต:</strong> ${item.observations.join(", ") || "ไม่มี"}<br><strong>บันทึก:</strong> ${item.note}</div></article>`).join("");
+  return shapes[name]||shapes.circle;
 }
+const labels={cup:"แก้ว",banana:"กล้วย",umbrella:"ร่ม",spoon:"ช้อน",key:"กุญแจ",door:"ประตู",toothbrush:"แปรงสีฟัน",toothpaste:"ยาสีฟัน",hat:"หมวก",flower:"ดอกไม้",house:"บ้าน",notebook:"สมุด",pen:"ปากกา",plate:"จาน",shoe:"รองเท้า",orange:"ส้ม",apple:"แอปเปิล",shirt:"เสื้อ",tree:"ต้นไม้",glasses:"แว่นตา",circle:"วงกลม",square:"สี่เหลี่ยม",triangle:"สามเหลี่ยม",star:"ดาว",circleDot:"วงกลมมีจุด",squareDot:"สี่เหลี่ยมมีจุด"};
+function iconCard(name, extra="stimulus-card"){return `<div class="${extra}"><div class="stimulus-icon">${svg(name)}</div><span class="object-label">${labels[name]||name}</span></div>`}
+function optionIcon(name,val=name){return `<button class="option" data-answer="${val}"><div class="stimulus-icon">${svg(name)}</div><span class="object-label">${labels[name]||name}</span></button>`}
+function textOption(txt,val=txt){return `<button class="option" data-answer="${val}"><span class="object-label">${txt}</span></button>`}
 
-document.querySelectorAll(".observation-chip").forEach(btn => {
-  btn.addEventListener("click", () => {
-    btn.classList.toggle("active");
-    state.currentObservation = [...document.querySelectorAll(".observation-chip.active")].map(x => x.textContent.trim());
-  });
-});
+const activities={
+ visual:{id:"A1",title:"จำภาพใกล้ตัว",domain:"Episodic / Visual Memory — design target",desc:"ดูของในบริบทเรียบง่าย แล้วเลือกของที่เคยเห็น",symbol:"cup",core:5,optional:1,
+  items:[
+   {level:"L1",scene:"โต๊ะ",study:["cup","banana"],answer:"cup",options:["cup","shoe"],hints:["ลองนึกถึงของที่เห็นเมื่อครู่นี้","เป็นของที่ใช้ดื่ม","คงเพียง 2 ตัวเลือกและมองทีละภาพ","แสดงชุดเดิมอีกครั้งแล้วลองใหม่"]},
+   {level:"L1",scene:"ตะกร้า",study:["umbrella","spoon"],answer:"umbrella",options:["umbrella","hat"],hints:["ลองนึกถึงของที่อยู่ในตะกร้า","เป็นของที่ใช้ตอนฝนตก","ดูตัวเลือกทีละภาพ","แสดงชุดเดิมอีกครั้งแล้วลองใหม่"]},
+   {level:"L2",scene:"ชั้นวาง",study:["key","orange","shirt"],answer:"key",options:["key","toothbrush","shoe"],hints:["นึกถึงของชิ้นเล็กในชุดแรก","ของนี้ใช้เปิดบางสิ่ง","ลดตัวเลือกที่ไม่เกี่ยวข้องออก 1 ตัว","แสดงชุดเดิมอีกครั้ง"]},
+   {level:"L2",scene:"โต๊ะอาหาร",study:["shoe","plate","flower"],answer:"plate",options:["plate","cup","spoon"],hints:["เป็นภาชนะสำหรับอาหาร","มีลักษณะแบน","ลดตัวเลือกเหลือ 2 ภาพ","แสดงชุดเดิมอีกครั้ง"]},
+   {level:"L3",scene:"มุมห้อง",study:["glasses","notebook","spoon","tree"],answer:"glasses",options:["glasses","hat","plate","flower"],hints:["นึกถึงของใช้ส่วนตัวที่อยู่ในชุดแรก","ของนี้ใช้ช่วยมองเห็น","ลดตัวเลือกเหลือ 3 ภาพ","แสดงชุดเดิมอีกครั้ง"]},
+   {level:"L3 Optional",scene:"ถาดของใช้",study:["toothbrush","cup","hat","orange"],answer:"toothbrush",options:["toothbrush","spoon","pen","toothpaste"],hints:["เป็นของใช้ส่วนตัว","ใช้กับฟัน","ลดตัวเลือกเหลือ 2–3 ภาพ","แสดงชุดเดิมอีกครั้ง"]}
+  ]},
+ language:{id:"A2",title:"ภาพนี้คืออะไร",domain:"Language / Semantic Processing — design target",desc:"เลือกชื่อ หน้าที่ หรือสิ่งที่สัมพันธ์กับภาพ",symbol:"banana",core:6,optional:0,
+  items:[
+   {level:"L1 Naming",mode:"naming",show:"banana",prompt:"ภาพนี้คืออะไร",answer:"กล้วย",options:["กล้วย","ส้ม","ช้อน"],hints:["เป็นผลไม้","เมื่อสุกมักมีเปลือกสีเหลือง","ลดตัวเลือกเหลือ 2 คำ","แสดงชื่อพร้อมภาพเพื่อปิดข้อ"]},
+   {level:"L1 Naming",mode:"naming",show:"umbrella",prompt:"ภาพนี้คืออะไร",answer:"ร่ม",options:["ร่ม","หมวก","รองเท้า"],hints:["เป็นของใช้เมื่ออากาศไม่ดี","กางเพื่อกันฝน","ลดตัวเลือกเหลือ 2 คำ","แสดงชื่อพร้อมภาพเพื่อปิดข้อ"]},
+   {level:"L2 Function",mode:"text",show:"spoon",prompt:"ของชิ้นนี้ใช้ทำอะไร",answer:"ใช้ตักอาหาร",options:["ใช้ตักอาหาร","ใช้หวีผม","ใช้เปิดประตู"],hints:["มักอยู่บนโต๊ะอาหาร","ใช้ตอนรับประทานอาหาร","ลดตัวเลือกเหลือ 2 ข้อ","แสดงข้อความตัวอย่างสั้น ๆ"]},
+   {level:"L2 Function",mode:"text",show:"toothbrush",prompt:"ของชิ้นนี้ใช้ทำอะไร",answer:"ใช้แปรงฟัน",options:["ใช้แปรงฟัน","ใช้เขียนหนังสือ","ใช้เปิดขวด"],hints:["เป็นของใช้ในห้องน้ำ","ใช้ดูแลช่องปาก","ลดตัวเลือกเหลือ 2 ข้อ","แสดงคำตอบพร้อมคำอธิบายสั้น ๆ"]},
+   {level:"L3 Association",mode:"iconRelation",show:"key",prompt:"สิ่งใดมักใช้ร่วมกับภาพนี้",answer:"door",options:["door","plate","hat","cup"],hints:["คิดถึงสิ่งที่มักเปิดด้วยของชิ้นนี้","อยู่บริเวณทางเข้าออกบ้าน","ลดตัวเลือกที่ไม่เกี่ยวข้องออก","แสดงคู่ตัวอย่างแล้วลองใหม่"]},
+   {level:"L3 Association",mode:"iconRelation",show:"toothbrush",prompt:"สิ่งใดมักใช้ร่วมกับภาพนี้",answer:"toothpaste",options:["toothpaste","notebook","umbrella","plate"],hints:["เป็นของใช้คู่กันในห้องน้ำ","ใช้ทาบนแปรงก่อนแปรงฟัน","ลดตัวเลือกเหลือ 2 ภาพ","แสดงคู่ตัวอย่างแล้วลองใหม่"]}
+  ]},
+ sequence:{id:"A3",title:"แตะตามลำดับ",domain:"Working Memory — design target",desc:"ดูและแตะสัญลักษณ์ตามลำดับสั้น ๆ",symbol:"star",core:5,optional:0,
+  items:[
+   {level:"L1",seq:["circle","star"],choices:["circle","star","square"],hints:["ลำดับมี 2 ขั้น","ขั้นแรกคือ วงกลม","แสดงลำดับอีกครั้งช้าลง","เปิด cue ทีละขั้น"]},
+   {level:"L1",seq:["house","flower"],choices:["house","flower","cup"],hints:["มี 2 ภาพที่ต้องแตะ","เริ่มจาก บ้าน","แสดงลำดับอีกครั้ง","highlight เป้าหมายถัดไปทีละขั้น"]},
+   {level:"L2",seq:["star","circle","square"],choices:["star","circle","square","triangle"],hints:["ลำดับมี 3 ขั้น","เริ่มจาก ดาว","แบ่งเป็น ดาว→วงกลม แล้วตามด้วยสี่เหลี่ยม","แสดงลำดับอีกครั้ง"]},
+   {level:"L2",seq:["spoon","cup","umbrella"],choices:["spoon","cup","umbrella","shoe"],hints:["จำ 3 ของตามลำดับ","ของชิ้นแรกใช้ตักอาหาร","แสดงลำดับอีกครั้งและเว้นจังหวะ","ชี้เป้าหมายถัดไปทีละขั้น"]},
+   {level:"L3",seq:["circle","star","triangle","square"],choices:["circle","star","triangle","square"],hints:["ลำดับมี 4 ขั้น","จำสองตัวแรกก่อน","แบ่งเป็น 2+2","แสดงลำดับอีกครั้งและช่วยทีละช่วง"]}
+  ]},
+ matching:{id:"A4",title:"จับคู่สิ่งของ",domain:"Visuospatial Processing — design target",desc:"จับคู่ภาพเหมือนหรือคู่สิ่งของที่สัมพันธ์กันอย่างชัดเจน",symbol:"key",core:5,optional:1,
+  items:[
+   {level:"L1 Visual",mode:"visual",prompt:"เลือกภาพที่เหมือนกับภาพตัวอย่าง",show:"cup",answer:"cup",options:["cup","umbrella","flower"],hints:["มองหารูปทรงที่เหมือนกัน","มีภาพแก้วอีกหนึ่งภาพ","ลดตัวเลือกเหลือ 2 ภาพ","ขยายภาพแล้วลองใหม่"]},
+   {level:"L1 Visual",mode:"visual",prompt:"เลือกภาพที่เหมือนกับภาพตัวอย่าง",show:"flower",answer:"flower",options:["house","flower","spoon","flower"],hints:["หาภาพที่เหมือนกันทุกส่วน","เป็นสิ่งที่ปลูกในสวน","ลดสิ่งรบกวน","ลดเหลือ 2 ภาพ"]},
+   {level:"L2 Visual",mode:"visual",prompt:"เลือกภาพที่เหมือนกับภาพตัวอย่าง",show:"plate",answer:"plate",options:["cup","plate","circle"],hints:["ดูรูปทรงรอบนอก","ภาพเป้าหมายเป็นจาน","ลดตัวเลือกเหลือ 2 ภาพ","ขยายภาพทั้งหมด"]},
+   {level:"L2 Functional",mode:"relation",prompt:"สิ่งใดมักใช้ร่วมกับภาพนี้",show:"key",answer:"door",options:["door","plate","hat"],hints:["คิดถึงของที่ใช้เปิด","กุญแจมักใช้กับทางเข้าออก","ลดตัวเลือก 1 ภาพ","แสดงคู่ตัวอย่าง"]},
+   {level:"L2 Functional",mode:"relation",prompt:"สิ่งใดมักใช้ร่วมกับภาพนี้",show:"toothbrush",answer:"toothpaste",options:["toothpaste","umbrella","notebook"],hints:["เป็นของใช้ในห้องน้ำ","ใช้ร่วมกันตอนดูแลฟัน","ลดตัวเลือกเหลือ 2 ภาพ","แสดงคู่ตัวอย่าง"]},
+   {level:"L3 Functional Optional",mode:"relation",prompt:"สิ่งใดมักใช้ร่วมกับภาพนี้",show:"pen",answer:"notebook",options:["notebook","spoon","umbrella","tree"],hints:["คิดถึงของที่มักใช้ตอนเขียน","ของอีกชิ้นใช้รองรับการเขียน","ลดตัวเลือกเหลือ 3 ภาพ","แสดงคู่ตัวอย่าง"]}
+  ]},
+ category:{id:"A5",title:"จัดหมวดหมู่ภาพ",domain:"Executive Function / Semantic — design target",desc:"เลือกหมวดที่ชัดเจนให้สิ่งของทีละชิ้น",symbol:"plate",core:4,optional:1,
+  items:[
+   {level:"L1",prompt:"กล้วยอยู่ในหมวดใด",show:"banana",answer:"อาหาร",options:["อาหาร","เสื้อผ้า"],hints:["ดูชื่อหมวดก่อน","ของที่กินได้อยู่หมวดอาหาร","ยกตัวอย่าง: ส้ม → อาหาร","คงเพียง 2 หมวดและทวนอีกครั้ง"]},
+   {level:"L1",prompt:"แปรงสีฟันอยู่ในหมวดใด",show:"toothbrush",answer:"ของใช้ส่วนตัว",options:["ของใช้ในครัว","ของใช้ส่วนตัว"],hints:["คิดว่าของนี้มักอยู่ที่ไหน","เป็นของใช้ในห้องน้ำ","ยกตัวอย่าง หวี → ของใช้ส่วนตัว","ทวนชื่อหมวดอีกครั้ง"]},
+   {level:"L2",prompt:"ร่มอยู่ในหมวดใด",show:"umbrella",answer:"ของใช้",options:["ผลไม้","ของใช้"],hints:["เริ่มจากถามว่าเป็นของกินหรือไม่","เป็นสิ่งของที่ใช้ในชีวิตประจำวัน","ลดคำอธิบายและคง 2 หมวด","ทวนกติกาอีกครั้ง"]},
+   {level:"L2",prompt:"เสื้ออยู่ในหมวดใด",show:"shirt",answer:"เสื้อผ้า",options:["ของกิน","ของใช้ในบ้าน","เสื้อผ้า"],hints:["มี 3 หมวด ลองอ่านทีละอัน","เป็นสิ่งที่สวมใส่","ยกตัวอย่าง หมวก → เสื้อผ้า","ลดเหลือ 2 หมวด"]},
+   {level:"L3 Optional",prompt:"จานมักใช้ในสถานที่ใด",show:"plate",answer:"ครัว",options:["ครัว","ห้องน้ำ","นอกบ้าน"],hints:["คิดถึงสถานที่ที่มักเก็บหรือใช้ของนี้","เกี่ยวข้องกับการรับประทานอาหาร","ลดเหลือ 2 หมวด","ถ้ามีหลายบริบท ผู้ดูแลสามารถจบข้อและบันทึกความกำกวมได้"]}
+  ]},
+ attention:{id:"A6",title:"เลือกเฉพาะเป้าหมาย",domain:"Selective Attention — design target",desc:"แตะเฉพาะภาพที่ตรงกับกติกาที่แสดงไว้",symbol:"flower",core:5,optional:1,
+  items:[
+   {level:"L1",rule:"แตะเฉพาะ “กล้วย”",targets:["banana"],grid:["banana","umbrella","banana","cup","flower","banana"],hints:["มองหารูปกล้วยเท่านั้น","มีมากกว่าหนึ่งรูป","ลดชนิดของตัวลวง","แสดงตัวอย่างเป้าหมายด้านบน"]},
+   {level:"L1+",rule:"แตะเฉพาะ “ดอกไม้”",targets:["flower"],grid:["flower","house","spoon","flower","key","flower","cup"],hints:["มองหาดอกไม้ทุกภาพ","มีทั้งหมดมากกว่าหนึ่งภาพ","ลดจำนวนตัวลวง","แสดงตัวอย่างดอกไม้ด้านบน"]},
+   {level:"L2",rule:"แตะเฉพาะ “ผลไม้”",targets:["banana","orange","apple"],grid:["banana","orange","umbrella","apple","spoon","hat"],hints:["เลือกของที่เป็นผลไม้","มีผลไม้ 3 ชนิด","ลดตัวลวง 1 ชิ้น","แสดงตัวอย่างผลไม้หนึ่งชนิด"]},
+   {level:"L2+",rule:"แตะเฉพาะ “ของที่ใช้บนโต๊ะอาหาร”",targets:["spoon","plate","cup"],grid:["spoon","plate","umbrella","hat","cup","toothbrush"],hints:["คิดถึงของที่ใช้ตอนรับประทานอาหาร","เริ่มจากช้อน","ลดตัวลวง 1–2 ชิ้น","เปลี่ยนเป็นกติกาง่ายกว่า"]},
+   {level:"L3",rule:"แตะเฉพาะ “วงกลมที่มีจุดอยู่ข้างใน”",targets:["circleDot"],grid:["circleDot","circle","squareDot","circleDot","square","circleDot"],hints:["ต้องตรง 2 อย่าง: เป็นวงกลม และมีจุด","ดูตัวอย่างเป้าหมายด้านบน","ลดจำนวนตัวลวง","ทำตัวอย่าง 1 ครั้งก่อน"]},
+   {level:"L3 Optional",rule:"แตะเฉพาะ “รูปบ้าน”",targets:["house"],grid:["house","tree","house","cup","house","square","tree","plate","house"],hints:["มองหารูปบ้านตามตัวอย่าง","ดูรูปหลังคาและประตู","ลดความคล้ายของตัวลวง","ลดจำนวนภาพบนหน้าจอ"]}
+  ]},
+ switch:{id:"A7",title:"เปลี่ยนกติกา",domain:"Cognitive Flexibility / Executive — design target",desc:"ทำตามกติกาที่แสดง และเปลี่ยนกติกาอย่างชัดเจนเมื่อระบบแจ้ง",symbol:"triangle",core:3,optional:2,
+  items:[
+   {level:"Practice L1",rule:"กติกาแรก: จัดตาม “ประเภท”",prompt:"กล้วยอยู่หมวดใด",show:"banana",answer:"ผลไม้",options:["ผลไม้","ของใช้"],hints:["กติกาตอนนี้คือ ประเภท","กล้วยเป็นผลไม้","ยกตัวอย่างอีกหนึ่งชิ้น","คงเพียง 2 ตัวเลือก"]},
+   {level:"L1 Switch",switch:true,rule:"กติกาใหม่: จัดตาม “รูปร่าง”",prompt:"วงกลมอยู่หมวดใด",show:"circle",answer:"กลม",options:["กลม","ไม่กลม"],hints:["ตอนนี้ไม่ใช้กติกาเดิมแล้ว","กติกาใหม่คือ รูปร่าง","วงกลม → กลม","ทำตัวอย่าง 1 ครั้งแล้วลองใหม่"]},
+   {level:"L2 Core",rule:"ยังใช้กติกา “รูปร่าง”",prompt:"สามเหลี่ยมอยู่หมวดใด",show:"triangle",answer:"ไม่กลม",options:["กลม","ไม่กลม"],hints:["ดูป้ายกติกาด้านบน","ตอนนี้ยังจัดตามรูปร่าง","สามเหลี่ยมไม่ใช่วงกลม","ลดเหลือ 2 ตัวเลือกและทวนกติกา"]},
+   {level:"L2 Optional Switch",switch:true,rule:"กติกาใหม่: จัดตาม “สถานที่ใช้”",prompt:"ช้อนมักอยู่ที่ใด",show:"spoon",answer:"ครัว",options:["ครัว","นอกบ้าน"],hints:["กติกาเปลี่ยนแล้ว","ตอนนี้คิดถึงสถานที่ใช้","ช้อนเกี่ยวข้องกับอาหาร","ทำตัวอย่าง 1 ครั้งก่อน"]},
+   {level:"L3 Optional",rule:"ยังใช้กติกา “สถานที่ใช้”",prompt:"ร่มมักใช้ที่ใด",show:"umbrella",answer:"นอกบ้าน",options:["ครัว","นอกบ้าน"],hints:["สามารถกดทวนกติกาได้","กติกาคือสถานที่ใช้","ร่มใช้เมื่อออกไปข้างนอก","ถ้ายังไม่สบายใจ สามารถจบกิจกรรมได้"]}
+  ]}
+};
 
+Object.keys(activities).forEach(k=>state.records[k]={status:"not-started",completed:0,hints:0,pauses:0,skips:0,wrong:0,reaction:"—",decision:"—",note:"",lastRecommendation:null,items:[]});
 
-window.startActivityFromReport=function(activityId){if(state.sessionClosed){toast("Session นี้ปิดแล้ว");return;}const item=state.activityStatus[activityId];if(item.status==="paused"){loadActivityState(activityId);go("activity");renderQuestion();}else{state.activity=activityId;state.question=0;state.completed=0;state.hints=0;state.hintIndex=0;state.startedAt=null;state.stopped=false;state.tried.add(activityId);const a=activities[activityId];document.getElementById("instructionIcon").textContent=a.icon;document.getElementById("instructionTitle").textContent=a.title;document.getElementById("instructionText").textContent=a.instruction;go("instruction");}};
-window.restartActivityFromReport=function(activityId){state.activityStatus[activityId]={status:"not-started",question:0,completed:0,hints:0,startedAt:null};window.startActivityFromReport(activityId);};
-document.getElementById("requestCloseSession").addEventListener("click",()=>go("close-confirm"));
-document.getElementById("confirmCloseSession").addEventListener("click",()=>{syncCurrentActivityState();state.sessionClosed=true;activityOrder.forEach(id=>{const item=state.activityStatus[id];if(item.status==="paused")item.status="closed";});go("session-closed");});
-document.getElementById("startNewSession").addEventListener("click",()=>{state.sessionClosed=false;state.activity=null;state.question=0;state.hints=0;state.completed=0;state.stopped=false;state.startedAt=null;state.tried=new Set();state.totalHints=0;state.lastStatus="ยังไม่มีข้อมูล";state.history=[];state.currentObservation=["ดูสบายใจ"];state.activityStatus={memory:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},language:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},sequence:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},matching:{status:"not-started",question:0,completed:0,hints:0,startedAt:null},category:{status:"not-started",question:0,completed:0,hints:0,startedAt:null}};go("welcome");toast("เริ่ม Session ใหม่แล้ว");});
+function go(name){state.previous=state.current;state.current=name;screens.forEach(s=>s.classList.toggle("active",s.id===`screen-${name}`));window.scrollTo({top:0,behavior:"smooth"});if(name==="activities")renderActivityGrid();if(name==="report")renderReport();}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),1800)}
+$$('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));$("#homeBtn").onclick=()=>go("welcome");
 
-function toast(message){
-  const t = document.getElementById("toast");
-  t.textContent = message;
-  t.classList.add("show");
-  clearTimeout(window.toastTimer);
-  window.toastTimer = setTimeout(()=>t.classList.remove("show"),2200);
-}
+$("#saveSettings").onclick=()=>{document.body.classList.remove("font-large","font-xlarge","high-contrast");const f=$("#fontSize").value;if(f==="large")document.body.classList.add("font-large");if(f==="xlarge")document.body.classList.add("font-xlarge");if($("#contrast").value==="high")document.body.classList.add("high-contrast");state.support=$("#support").value;toast("บันทึกการตั้งค่าแล้ว");go("activities")};
+
+function renderActivityGrid(){const grid=$("#activityGrid");grid.innerHTML="";Object.entries(activities).forEach(([key,a])=>{const r=state.records[key];const status=r.status==="completed"?"ทำแล้ว":r.status==="in-progress"?"ทำค้างไว้":"ยังไม่เริ่ม";const card=document.createElement("article");card.className="activity-card";card.innerHTML=`<div class="activity-symbol">${svg(a.symbol)}</div><span class="eyebrow">${a.id} · ${a.domain.split('—')[0]}</span><h3>${a.title}</h3><p>${a.desc}</p><span class="meta">${a.core} Core${a.optional?` + ${a.optional} Optional`:''} · ${status}</span><button class="primary" ${state.sessionClosed?'disabled':''}>${r.status==="in-progress"?'ทำต่อ':'เริ่ม'}</button>`;card.querySelector("button").onclick=()=>prepareActivity(key);grid.append(card)});$("#sessionBadge").textContent=state.sessionClosed?"Session ปิดแล้ว":"Session เปิดอยู่"}
+function prepareActivity(key){if(state.sessionClosed){toast("Session นี้ปิดแล้ว กรุณาเริ่ม Session ใหม่");return}state.activity=key;const a=activities[key],r=state.records[key];if(r.status==="in-progress"&&r.completed<a.items.length){state.itemIndex=r.completed;state.hintIndex=0;state.currentWrong=0;go("activity");renderItem();return}state.itemIndex=0;state.hintIndex=0;state.currentWrong=0;$("#instructionDomain").textContent=a.domain;$("#instructionIcon").innerHTML=svg(a.symbol);$("#instructionTitle").textContent=a.title;$("#instructionText").textContent=a.desc;go("instruction")}
+$("#startActivityBtn").onclick=()=>{const r=state.records[state.activity];r.status="in-progress";state.itemIndex=r.completed||0;state.hintIndex=0;state.currentWrong=0;go("activity");renderItem()};
+
+function current(){return {a:activities[state.activity],q:activities[state.activity].items[state.itemIndex],r:state.records[state.activity]}}
+function renderItem(){const {a,q}=current();state.hintIndex=0;state.currentWrong=0;$("#hintPanel").hidden=true;$("#ruleStrip").hidden=!q.rule;$("#ruleStrip").textContent=q.rule||"";$("#activityDomain").textContent=a.domain;$("#activityTitle").textContent=a.title;$("#progressText").textContent=`ข้อ ${state.itemIndex+1} จาก ${a.core+a.optional} · ${q.level}`;if(state.activity==="visual")renderVisual(q);else if(state.activity==="language")renderLanguage(q);else if(state.activity==="sequence")renderSequence(q);else if(state.activity==="matching")renderMatching(q);else if(state.activity==="category")renderCategory(q);else if(state.activity==="attention")renderAttention(q);else renderSwitch(q)}
+
+function renderVisual(q){const area=$("#activityArea");area.innerHTML=`<div class="prompt"><p class="instruction-large">ดูของใน “${q.scene}” นี้สักครู่</p><div class="study-frame"><div class="scene-label">${q.scene}</div><div class="stimulus-row">${q.study.map(x=>iconCard(x)).join('')}</div></div><button class="primary" id="rememberBtn" style="margin-top:18px">พร้อมแล้ว</button></div>`;$("#rememberBtn").onclick=()=>{area.innerHTML=`<div class="prompt"><p class="instruction-large">เลือกของที่เคยเห็นใน “${q.scene}”</p><div class="memory-cover">ภาพเดิมถูกซ่อนไว้แล้ว</div><div class="options" style="margin-top:18px">${q.options.map(x=>optionIcon(x)).join('')}</div></div>`;bindSingleAnswer(q.answer)}}
+function renderLanguage(q){const area=$("#activityArea");const opts=q.mode==="iconRelation"?q.options.map(x=>optionIcon(x)).join(''):q.options.map(x=>textOption(x)).join('');area.innerHTML=`<div class="prompt"><p class="instruction-large">${q.prompt}</p>${iconCard(q.show)}<div class="options" style="margin-top:18px">${opts}</div></div>`;bindSingleAnswer(q.answer)}
+function renderMatching(q){const area=$("#activityArea");area.innerHTML=`<div class="prompt"><p class="instruction-large">${q.prompt}</p>${iconCard(q.show)}<div class="options" style="margin-top:18px">${q.options.map(x=>optionIcon(x)).join('')}</div></div>`;bindSingleAnswer(q.answer)}
+function renderCategory(q){const area=$("#activityArea");area.innerHTML=`<div class="prompt"><p class="instruction-large">${q.prompt}</p>${iconCard(q.show)}<div class="category-buttons">${q.options.map(x=>textOption(x)).join('')}</div></div>`;bindSingleAnswer(q.answer)}
+function renderSwitch(q){if(q.switch){toast("กติกาเปลี่ยนแล้ว — โปรดดูป้ายกติกาด้านบน")};renderCategory(q)}
+function renderSequence(q){const area=$("#activityArea");area.innerHTML=`<div class="prompt"><p class="instruction-large">จำลำดับนี้</p><div class="stimulus-row">${q.seq.map(x=>iconCard(x)).join('')}</div><button id="seqReady" class="primary" style="margin-top:18px">พร้อมแล้ว</button></div>`;$("#seqReady").onclick=()=>{const positions=[[18,28],[50,26],[78,35],[36,72]];area.innerHTML=`<div class="prompt"><p class="instruction-large">แตะตามลำดับที่เห็น</p><div class="sequence-board">${q.choices.map((x,i)=>`<button class="seq-node" data-val="${x}" style="left:${positions[i][0]}%;top:${positions[i][1]}%">${svg(x)}</button>`).join('')}</div></div>`;let next=0;$$('.seq-node').forEach(n=>n.onclick=()=>{if(n.dataset.val===q.seq[next]){n.classList.add('done');n.disabled=true;next++;if(next===q.seq.length)completeItem(true)}else{recordWrong();toast("ลองดูคำสั่งอีกครั้งได้ค่ะ")}})}}
+function renderAttention(q){const area=$("#activityArea");area.innerHTML=`<div class="prompt"><p class="instruction-large">${q.rule}</p><p class="support-text">แตะทุกภาพที่ตรงกับกติกา แล้วกด “เรียบร้อย”</p><div class="target-grid">${q.grid.map((x,i)=>`<button class="target-item" data-idx="${i}" data-name="${x}"><div class="stimulus-icon">${svg(x)}</div><span class="object-label">${labels[x]||x}</span></button>`).join('')}</div><button id="targetDone" class="primary" style="margin-top:18px">เรียบร้อย</button></div>`;$$('.target-item').forEach(b=>b.onclick=()=>b.classList.toggle('selected'));$("#targetDone").onclick=()=>{let wrong=0,miss=0;$$('.target-item').forEach(b=>{const should=q.targets.includes(b.dataset.name),sel=b.classList.contains('selected');if(sel&&!should)wrong++;if(!sel&&should)miss++});for(let i=0;i<wrong+miss;i++)recordWrong(false);if(wrong+miss===0)completeItem(true);else{toast("เรียบร้อยค่ะ ระบบบันทึก interaction แล้ว");completeItem(false)}}}
+function bindSingleAnswer(answer){$$('[data-answer]').forEach(b=>b.onclick=()=>{if(b.dataset.answer===answer){b.classList.add('selected');completeItem(true)}else{recordWrong();b.classList.add('selected');toast("ลองอีกครั้ง หรือขอคำใบ้ได้ค่ะ")}})}
+function recordWrong(show=true){const r=state.records[state.activity];r.wrong++;state.currentWrong++;if(show&&state.currentWrong>=2)toast("สามารถขอคำใบ้หรือพักได้ค่ะ")}
+function completeItem(correct){const {a,q,r}=current();r.completed=Math.max(r.completed,state.itemIndex+1);r.items[state.itemIndex]={level:q.level,hints:state.hintIndex,wrong:state.currentWrong,correct:!!correct,skipped:false};r.hints+=state.hintIndex;const msg=correct?"เรียบร้อยค่ะ":"บันทึกเรียบร้อยค่ะ";$("#activityArea").insertAdjacentHTML('beforeend',`<div class="feedback">${msg}</div>`);setTimeout(()=>advanceAfterItem(),550)}
+function advanceAfterItem(){const {a,r}=current();state.itemIndex++;const coreDone=state.itemIndex>=a.core;if(coreDone&&a.optional>0&&state.itemIndex===a.core){const highHint=recentHighHint(r),concern=r.pauses>0||r.wrong>=4;if(highHint||concern){finishActivity("core-only");return}$("#optionalReason").textContent="Core items เสร็จแล้ว และยังไม่พบรูปแบบการพัก/คำใบ้ที่ทำให้ควรหยุดอัตโนมัติ คุณสามารถเลือกทำต่อหรือจบได้";go("optional");return}if(state.itemIndex>=a.items.length){finishActivity("complete");return}renderItem()}
+function recentHighHint(r){const xs=r.items.filter(Boolean).slice(-2);return xs.length===2&&xs.every(x=>x.hints>=2)}
+$("#continueOptionalBtn").onclick=()=>{go("activity");renderItem()};$("#finishCoreBtn").onclick=()=>finishActivity("core-only");
+function finishActivity(reason){const r=state.records[state.activity];r.status="completed";r.finishReason=reason;state.reaction=null;$$('.reaction').forEach(x=>x.classList.remove('selected'));$("#caregiverNote").value="";go("reaction")}
+$("#hintBtn").onclick=()=>{const {q,r}=current();if(state.hintIndex>=4){toast("ใช้คำใบ้ครบ 4 ขั้นแล้ว สามารถข้ามหรือพักได้ค่ะ");return}const text=q.hints[state.hintIndex]||"ทวนคำสั่งอีกครั้ง";state.hintIndex++;$("#hintLabel").textContent=`คำใบ้ ${state.hintIndex} / 4`;$("#hintText").textContent=text;$("#hintPanel").hidden=false;r.status="in-progress"};
+$("#repeatBtn").onclick=()=>{const {q}=current();toast(q.rule?q.rule:"ทวนคำสั่งของข้อนี้ได้ค่ะ")};
+$("#pauseBtn").onclick=()=>{state.records[state.activity].pauses++;state.lastScreen="activity";go("pause")};$("#resumeBtn").onclick=()=>go("activity");$("#finishFromPause").onclick=()=>finishActivity("paused-finish");
+$("#skipBtn").onclick=()=>{const {r,q}=current();r.skips++;r.items[state.itemIndex]={level:q.level,hints:state.hintIndex,wrong:state.currentWrong,correct:false,skipped:true};r.hints+=state.hintIndex;r.completed=Math.max(r.completed,state.itemIndex+1);toast("ข้ามข้อนี้แล้ว โดยไม่ถือว่าเป็นความล้มเหลว");advanceAfterItem()};
+
+$$('.reaction').forEach(b=>b.onclick=()=>{$$('.reaction').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');state.reaction=b.dataset.reaction});
+$("#saveReactionBtn").onclick=()=>{const r=state.records[state.activity];r.reaction=state.reaction||"ไม่ได้เลือก";r.note=$("#caregiverNote").value.trim();if(r.note)state.noteHistory.push({activity:activities[state.activity].title,note:r.note});const rec=buildRecommendation(state.activity);r.lastRecommendation=rec;state.recHistory.push({activity:activities[state.activity].title,...rec,decision:"Pending"});$("#recObserved").textContent=rec.observed;$("#recProposed").textContent=rec.proposed;$("#recWhy").textContent=rec.why;$("#modifyPanel").hidden=true;go("recommendation")};
+function buildRecommendation(key){const a=activities[key],r=state.records[key];const last2=r.items.filter(Boolean).slice(-2);const highHint=last2.length===2&&last2.every(x=>x.hints>=2);if(r.pauses>0||r.skips>0)return{observed:`กิจกรรม ${a.title} มีการพัก/ข้าม ${r.pauses+r.skips} ครั้ง`,proposed:"คงรูปแบบที่คุ้นเคย และเปิด Pause/Skip ให้เห็นชัดในครั้งถัดไป",why:"เพื่อให้การทำกิจกรรมยืดหยุ่นตามความพร้อม โดยไม่เพิ่มความซับซ้อนอัตโนมัติ"};if(highHint)return{observed:"2 ข้อล่าสุดมีการใช้คำใบ้อย่างน้อย 2 ขั้นต่อข้อ",proposed:key==='sequence'?"คงความยาวลำดับเดิมและเปิดการแบ่งเป็นช่วง":key==='switch'?"คงป้ายกติกาไว้ตลอดและใช้เพียงหนึ่งการเปลี่ยนกติกา":"คงระดับเดิมและลดจำนวนตัวเลือก/ตัวลวงเล็กน้อย",why:"คำแนะนำอ้างอิงรูปแบบการใช้คำใบ้ล่าสุด เพื่อช่วยให้หน้าจอและคำสั่งง่ายต่อการทำต่อ"};if(r.wrong>=4)return{observed:`มีการแตะ/เลือกไม่ตรงกับเป้าหมายหลายครั้ง (${r.wrong} interaction)`,proposed:key==='attention'?"ลดความคล้ายและจำนวนตัวลวงก่อน":"ตรวจขนาดเป้าหมายและลดความซับซ้อนของตัวเลือก",why:"ควรตรวจ presentation และการแตะหน้าจอก่อนตีความว่าโจทย์ยาก"};return{observed:"ทำ Core items ต่อเนื่อง โดยไม่มีรูปแบบการพักหรือการใช้คำใบ้สูงในช่วงท้าย",proposed:"คงระดับปัจจุบัน และให้ผู้ดูแลเลือกว่าจะใช้ Optional item หรือกิจกรรมอื่นในครั้งถัดไป",why:"ข้อมูลยังเหมาะกับการคงรูปแบบเดิมมากกว่าการเพิ่มความยากอัตโนมัติ"}}
+$$('.decision').forEach(b=>b.onclick=()=>{if(b.dataset.decision==='Modify'){$('#modifyPanel').hidden=false;return}saveDecision(b.dataset.decision)});$("#confirmModify").onclick=()=>saveDecision(`Modify: ${$("#manualModify").value}`);
+function saveDecision(dec){const r=state.records[state.activity];r.decision=dec;const last=state.recHistory[state.recHistory.length-1];if(last)last.decision=dec;toast("บันทึกการตัดสินใจของผู้ดูแลแล้ว");go("report")}
+
+function renderReport(){const entries=Object.entries(activities),completed=entries.filter(([k])=>state.records[k].status==='completed').length,totalHints=entries.reduce((s,[k])=>s+state.records[k].hints,0),pauses=entries.reduce((s,[k])=>s+state.records[k].pauses,0),skips=entries.reduce((s,[k])=>s+state.records[k].skips,0);$("#summaryGrid").innerHTML=`<div class="summary-card"><span>กิจกรรมที่จบ</span><strong>${completed}</strong></div><div class="summary-card"><span>คำใบ้รวม</span><strong>${totalHints}</strong></div><div class="summary-card"><span>พัก</span><strong>${pauses}</strong></div><div class="summary-card"><span>ข้ามข้อ</span><strong>${skips}</strong></div>`;$("#reportTable").innerHTML=entries.map(([k,a])=>{const r=state.records[k];const st=r.status==='completed'?'จบกิจกรรม':r.status==='in-progress'?'ยังทำไม่จบ':'ยังไม่เริ่ม';return `<tr><td>${a.id} ${a.title}</td><td>${st}</td><td>${r.completed}/${a.core+a.optional}</td><td>${r.hints}</td><td>${r.pauses}/${r.skips}</td><td>${r.reaction}</td><td>${r.decision}</td></tr>`}).join('');$("#recommendationHistory").innerHTML=state.recHistory.length?state.recHistory.slice().reverse().map(x=>`<div class="history-item"><strong>${x.activity}</strong><p>${x.proposed}</p><small>Caregiver: ${x.decision}</small></div>`).join(''):`<div class="empty">ยังไม่มีคำแนะนำ</div>`;$("#noteHistory").innerHTML=state.noteHistory.length?state.noteHistory.slice().reverse().map(x=>`<div class="history-item"><strong>${x.activity}</strong><p>${escapeHtml(x.note)}</p></div>`).join(''):`<div class="empty">ยังไม่มีบันทึก</div>`}
+function escapeHtml(s){return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+$("#closeSessionBtn").onclick=()=>{state.sessionClosed=true;go("session-closed")};$("#newSessionBtn").onclick=()=>{state.sessionClosed=false;state.activity=null;state.itemIndex=0;state.recHistory=[];state.noteHistory=[];Object.keys(state.records).forEach(k=>state.records[k]={status:"not-started",completed:0,hints:0,pauses:0,skips:0,wrong:0,reaction:"—",decision:"—",note:"",lastRecommendation:null,items:[]});go("caregiver")};
+renderActivityGrid();
